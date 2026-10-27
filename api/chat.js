@@ -29,7 +29,18 @@ export default async function handler(req, res) {
     );
 
     const data = await r.json();
-    if (!r.ok) return res.status(502).json({ error: "Gemini is temporarily unavailable. Check the API configuration." });
+    if (!r.ok) {
+      const googleMessage = data?.error?.message || "No details returned";
+      console.error("Gemini failure:", JSON.stringify({
+        status: r.status,
+        message: googleMessage.slice(0, 500)
+      }));
+      return res.status(502).json({
+        error: "Gemini request failed.",
+        googleStatus: r.status,
+        details: googleMessage.slice(0, 300)
+      });
+    }
 
     const reply = (data.candidates?.[0]?.content?.parts || []).map(p => p.text || "").join("").trim();
     if (!reply) return res.status(502).json({ error: "Gemini returned an empty response." });
