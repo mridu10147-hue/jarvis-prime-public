@@ -13,7 +13,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Enter a message of up to 4000 characters." });
 
     const r = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent",
       {
         method: "POST",
         headers: {
@@ -45,7 +45,7 @@ export default async function handler(req, res) {
     const reply = (data.candidates?.[0]?.content?.parts || []).map(p => p.text || "").join("").trim();
     if (!reply) return res.status(502).json({ error: "Gemini returned an empty response." });
 
-    return res.status(200).json({ reply, engine: "gemini-2.5-flash", fallback: false });
+    return res.status(200).json({ reply, engine: "gemini-3.8-flash", fallback: false });
   } catch {
     return res.status(500).json({ error: "A server error occurred." });
   }
