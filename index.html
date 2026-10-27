@@ -1,0 +1,4229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>JARVIS PRIME</title>
+<style>
+:root{--bg:#06131e;--accent:#9deaff;--text:#e6faff;--panel:#102b3ccc}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:Arial}
+canvas{position:fixed;inset:0;width:100%;height:100%;touch-action:none}
+header{position:fixed;top:0;left:0;right:0;padding:16px;display:flex;align-items:center;justify-content:space-between;pointer-events:none}
+header>*{pointer-events:auto}
+.brand{font-size:12px;letter-spacing:3px}
+.controls{display:flex;gap:8px}
+button,select{background:var(--panel);border:1px solid var(--accent);color:var(--text);border-radius:12px;padding:10px}
+#chat{position:fixed;bottom:15px;left:50%;transform:translateX(-50%);width:min(94%,650px);height:42%;display:none;flex-direction:column;background:var(--panel);backdrop-filter:blur(15px);border-radius:18px}
+#messages{flex:1;overflow:auto;padding:15px;font-size:14px}
+.message{margin-bottom:12px;white-space:pre-wrap}
+.user{color:var(--accent)}
+.input{display:flex;gap:8px;padding:10px}
+input{flex:1;min-width:0;background:transparent;color:var(--text);border:1px solid var(--accent);border-radius:10px;padding:12px}
+#status{position:fixed;bottom:10px;left:12px;font-size:10px;opacity:.65;pointer-events:none}
+
+/* JARVIS_BOTTOM_COMMAND_PANEL_V1 */
+#primeCommandPanel{
+ position:fixed;z-index:1001;left:50%;bottom:14px;
+ transform:translate(-50%,22px);
+ width:min(64vw,760px);min-width:0;
+ padding:10px;border:1px solid rgba(62,195,255,.6);
+ border-radius:12px;background:rgba(3,17,31,.94);
+ box-shadow:0 0 20px rgba(0,155,255,.12);
+ backdrop-filter:blur(10px);font:11px system-ui,sans-serif;
+ opacity:0;visibility:hidden;pointer-events:none;
+ transition:opacity .4s,transform .4s,visibility .4s;
+}
+body.prime-2d #primeCommandPanel{
+ opacity:1;visibility:visible;pointer-events:auto;
+ transform:translate(-50%,0);
+}
+#primeCommandPanel h3{
+ margin:0 0 8px;color:#58d9ff;font-size:11px;
+ letter-spacing:1.2px;display:flex;justify-content:space-between;
+}
+#primeCommandForm{display:flex;gap:5px}
+#primeCommandInput{
+ flex:1;min-width:0;padding:9px;color:white;
+ background:#071b2c;border:1px solid #276487;border-radius:6px;
+}
+#primeCommandPanel button{
+ color:#b9edff;background:rgba(20,100,150,.25);
+ border:1px solid #26769b;border-radius:6px;padding:7px;cursor:pointer;
+}
+#primePermissionRow{
+ display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:8px;
+}
+#primePermissionStatus{color:#9deaff;flex:1;min-width:100px}
+#primeCommandPanel button:focus-visible,#primeCommandInput:focus-visible{
+ outline:2px solid #66e6ff;outline-offset:2px;
+}
+@media(max-width:700px){
+ #primeCommandPanel{width:min(72vw,520px);min-width:0;bottom:8px;padding:9px}
+ #primeCommandPanel h3{font-size:9px}
+ #primeCommandPanel button{padding:6px 5px}
+ #primeCommandInput{padding:7px;font-size:11px}
+}
+@media(max-width:430px){
+ #primeCommandPanel{width:82vw;bottom:5px}
+ #primePermissionRow{gap:4px}
+ #primePermissionStatus{flex-basis:100%}
+}
+
+/* JARVIS_DATA_CARDS_V1 */
+#primeCards{
+ position:fixed;inset:70px 12px 45px;
+ z-index:8;pointer-events:none;
+ display:grid;
+ grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+ justify-content:space-between;
+ gap:clamp(120px,38vw,450px);
+ opacity:0;visibility:hidden;
+ transition:opacity .5s ease,visibility .5s;
+ font:12px system-ui,sans-serif;color:#c9eaff;
+}
+body.prime-2d #primeCards{opacity:1;visibility:visible}
+.prime-column{
+ display:flex;flex-direction:column;gap:10px;
+ min-width:0;min-height:0;
+}
+.prime-card{
+ background:rgba(3,17,31,.88);
+ border:1px solid rgba(62,195,255,.38);
+ border-radius:12px;
+ box-shadow:inset 0 0 20px rgba(0,155,255,.06);
+ backdrop-filter:blur(9px);
+ padding:11px;
+ min-height:0;
+ overflow:auto;
+ pointer-events:auto;
+ transition:transform .65s ease;
+}
+.prime-column:first-child .prime-card{transform:translateX(-110%)}
+.prime-column:last-child .prime-card{transform:translateX(110%)}
+body.prime-2d .prime-card{transform:translateX(0)}
+.prime-card h3{
+ margin:0 0 10px;font-size:12px;
+ letter-spacing:1.3px;color:#58d9ff;
+ display:flex;justify-content:space-between;
+}
+.prime-card button{
+ color:#b9edff;background:rgba(20,100,150,.25);
+ border:1px solid #26769b;border-radius:6px;
+ padding:6px;cursor:pointer;
+}
+.prime-row{
+ display:flex;justify-content:space-between;
+ gap:8px;padding:5px 0;
+ border-bottom:1px solid rgba(100,200,255,.1);
+}
+.prime-value{color:#fff;text-align:right}
+.prime-muted{color:#789eaf}
+#primeChatLog{
+ flex:1;overflow:auto;min-height:60px;
+ white-space:pre-wrap;overflow-wrap:anywhere;
+}
+#primeChatForm{display:flex;gap:5px;margin-top:8px}
+#primeChatInput{
+ min-width:0;flex:1;padding:9px;
+ color:white;background:#071b2c;
+ border:1px solid #276487;border-radius:6px;
+}
+#primeChatCard{display:flex;flex-direction:column;flex:3}
+#primeTaskCard{flex:2}
+#primeSystemCard,#primeAICard{flex:1}
+.prime-extra{display:none;margin-top:10px}
+.prime-card.expanded .prime-extra{display:block}
+#primeCards button:focus-visible,#primeChatInput:focus-visible{
+ outline:2px solid #66e6ff;
+}
+@media(max-width:850px){
+ #primeCards{gap:clamp(105px,34vw,300px);font-size:10px}
+ .prime-card{padding:7px}
+ .prime-card h3{font-size:10px}
+}
+@media(max-width:550px){
+ #primeCards{inset:60px 5px 28px;gap:31vw}
+ .prime-card{padding:5px;border-radius:7px}
+ .prime-row{flex-direction:column;gap:1px}
+}
+
+
+/* JARVIS_CARD_RENDER_FIX_V3 */
+#primeCards{
+ z-index:1000!important;
+ display:grid!important;
+ opacity:0;
+ visibility:hidden;
+ pointer-events:none;
+}
+body.prime-2d #primeCards{
+ opacity:1!important;
+ visibility:visible!important;
+}
+body.prime-2d #primeCards .prime-card{
+ transform:translateX(0)!important;
+ opacity:1!important;
+ pointer-events:auto;
+}
+#primeCards .prime-column{
+ min-height:0;
+}
+#primeCards .prime-card{
+ position:relative;
+ z-index:1001;
+}
+
+/* JARVIS_CARD_SAFE_LAYOUT_V1 */
+
+/* Reserve the central area for the existing reactor. */
+#primeCards{
+ left:8px!important;
+ right:8px!important;
+ top:70px!important;
+ bottom:42px!important;
+ display:grid!important;
+ grid-template-columns:
+  minmax(0,1fr)
+  minmax(0,1fr)!important;
+ column-gap:46vw!important;
+ align-items:stretch;
+}
+
+/* Keep cards inside their respective side columns. */
+#primeCards .prime-column{
+ width:100%;
+ min-width:0;
+ max-width:100%;
+ overflow:visible;
+}
+
+/* Prevent content from stretching the cards. */
+#primeCards .prime-card{
+ width:100%;
+ max-width:100%;
+ min-width:0;
+ overflow:auto;
+}
+
+/* Compact typography to preserve usable space. */
+#primeCards .prime-card h3{
+ font-size:11px;
+ letter-spacing:.5px;
+ flex-wrap:wrap;
+ gap:4px;
+}
+
+#primeCards .prime-row{
+ overflow-wrap:anywhere;
+}
+
+/* Adapt to smaller screens. */
+@media(max-width:700px){
+ #primeCards{
+  column-gap:49vw!important;
+ }
+ #primeCards .prime-card{
+  padding:6px;
+ }
+ #primeCards .prime-card h3{
+  font-size:9px;
+ }
+}
+
+/* JARVIS_ADAPTIVE_CARD_SIZE_V1 */
+
+/* Slightly wider cards; preserve the central reactor. */
+#primeCards{
+ column-gap:42vw!important;
+ font-size:clamp(11px,1.05vw,15px)!important;
+}
+
+/* Better use of available card space. */
+#primeCards .prime-card{
+ padding:clamp(8px,1vw,14px)!important;
+ line-height:1.4;
+}
+
+/* Larger, clearer headings. */
+#primeCards .prime-card h3{
+ font-size:clamp(11px,1.15vw,16px)!important;
+ letter-spacing:.6px;
+ margin-bottom:10px;
+}
+
+/* Adaptive data text. */
+#primeCards .prime-row{
+ font-size:clamp(11px,1.05vw,15px);
+ line-height:1.45;
+ padding:6px 0;
+}
+
+/* Important readings remain prominent. */
+#primeCards .prime-value{
+ font-size:1.05em;
+ font-weight:600;
+}
+
+/* Readable controls. */
+#primeCards button{
+ font-size:clamp(10px,.9vw,13px);
+ padding:7px 9px;
+}
+
+#primeChatInput{
+ font-size:clamp(11px,1vw,15px);
+ min-height:38px;
+}
+
+/* Compact text when many readings are present. */
+#primeCards .prime-card:has(.prime-row:nth-child(8)){
+ font-size:11px!important;
+}
+
+#primeCards .prime-card:has(.prime-row:nth-child(8)) .prime-row{
+ font-size:11px!important;
+ padding:3px 0;
+}
+
+/* Smaller tablet layouts. */
+@media(max-width:700px){
+ #primeCards{
+  column-gap:46vw!important;
+  font-size:11px!important;
+ }
+ #primeCards .prime-card h3{
+  font-size:11px!important;
+ }
+ #primeCards .prime-row{
+  font-size:11px;
+ }
+}
+
+
+
+
+/* JARVIS_COMMAND_PANEL_3X_V1 */
+#primeCommandPanel{
+ width:min(90vw,1100px)!important;
+ min-width:0!important;
+ padding:24px!important;
+ bottom:14px!important;
+ font-size:16px!important;
+}
+#primeCommandPanel h3{font-size:18px!important;margin-bottom:16px!important}
+#primeCommandForm{gap:12px!important}
+#primeCommandInput{padding:18px!important;font-size:18px!important;min-height:54px}
+#primeCommandPanel button{padding:14px 18px!important;font-size:15px!important}
+#primePermissionRow{gap:12px!important;margin-top:16px!important}
+#primePermissionStatus{font-size:14px!important;min-width:160px}
+@media(max-width:700px){
+ #primeCommandPanel{width:94vw!important;padding:16px!important;bottom:8px!important}
+ #primeCommandPanel h3{font-size:14px!important;margin-bottom:12px!important}
+ #primeCommandInput{padding:12px!important;font-size:15px!important;min-height:44px}
+ #primeCommandPanel button{padding:10px!important;font-size:12px!important}
+ #primePermissionRow{gap:8px!important;margin-top:12px!important}
+ #primePermissionStatus{font-size:12px!important}
+}
+
+
+
+/* JARVIS_COMMAND_PANEL_2X_TALL_NO_OVERLAP_V1 */
+#primeCommandPanel{
+ width:min(72vw,850px)!important;
+ bottom:clamp(155px,23vh,230px)!important;
+ padding:22px!important;
+ box-sizing:border-box!important;
+}
+#primeCommandPanel h3{font-size:16px!important;margin-bottom:16px!important}
+#primeCommandForm{gap:10px!important}
+#primeCommandInput{min-height:52px!important;padding:15px!important;font-size:16px!important}
+#primeCommandPanel button{padding:12px 15px!important;font-size:13px!important}
+#primePermissionRow{margin-top:14px!important;gap:10px!important}
+@media(max-width:700px){
+ #primeCommandPanel{
+  width:88vw!important;
+  bottom:clamp(145px,22vh,205px)!important;
+  padding:16px!important;
+ }
+ #primeCommandInput{min-height:44px!important;padding:11px!important}
+ #primeCommandPanel button{padding:10px!important}
+}
+
+
+
+/* JARVIS_COMMAND_PANEL_FILL_BOTTOM_V1 */
+#primeCommandPanel{
+ top:50%!important;
+ bottom:12px!important;
+ transform:translate(-50%,0)!important;
+ height:auto!important;
+ min-height:0!important;
+ display:flex!important;
+ flex-direction:column!important;
+ justify-content:flex-start!important;
+ width:min(72vw,850px)!important;
+ box-sizing:border-box!important;
+ padding:24px!important;
+}
+body.prime-2d #primeCommandPanel{
+ transform:translate(-50%,0)!important;
+}
+#primeCommandPanel h3{font-size:17px!important;margin-bottom:20px!important}
+#primeCommandForm{gap:12px!important}
+#primeCommandInput{min-height:54px!important;padding:16px!important;font-size:17px!important}
+#primeCommandPanel button{padding:14px 17px!important;font-size:14px!important}
+#primePermissionRow{margin-top:18px!important;gap:12px!important}
+@media(max-width:700px){
+ #primeCommandPanel{
+  top:48%!important;
+  bottom:8px!important;
+  width:88vw!important;
+  padding:16px!important;
+ }
+ #primeCommandInput{min-height:46px!important;padding:12px!important;font-size:15px!important}
+ #primeCommandPanel button{padding:10px!important;font-size:12px!important}
+}
+
+
+
+/* JARVIS_COMMAND_PANEL_CLEAR_BLOB_V1 */
+#primeCommandPanel{
+ top:auto!important;
+ bottom:12px!important;
+ left:50%!important;
+ width:min(36vw,480px)!important;
+ max-height:30vh!important;
+ overflow-y:auto!important;
+ padding:14px!important;
+ box-sizing:border-box!important;
+ transform:translate(-50%,0)!important;
+}
+body.prime-2d #primeCommandPanel{
+ transform:translate(-50%,0)!important;
+}
+#primeCommandPanel h3{font-size:13px!important;margin-bottom:10px!important}
+#primeCommandInput{min-height:40px!important;padding:10px!important;font-size:14px!important}
+#primeCommandPanel button{padding:8px 10px!important;font-size:11px!important}
+#primePermissionRow{margin-top:9px!important;gap:7px!important}
+@media(max-width:700px){
+ #primeCommandPanel{
+  width:58vw!important;
+  max-height:27vh!important;
+  bottom:8px!important;
+  padding:10px!important;
+ }
+ #primeCommandInput{min-height:36px!important;padding:8px!important}
+ #primeCommandPanel button{padding:7px!important}
+}
+
+
+
+/* JARVIS_COMMAND_PANEL_PRO_PROPORTIONS_V1 */
+#primeCommandPanel{
+ left:50%!important;
+ top:auto!important;
+ bottom:clamp(12px,2.2vh,24px)!important;
+ width:clamp(300px,34vw,460px)!important;
+ max-width:calc(100vw - 32px)!important;
+ max-height:24vh!important;
+ overflow-y:auto!important;
+ box-sizing:border-box!important;
+ padding:13px 15px!important;
+ border-radius:12px!important;
+ border:1px solid rgba(82,205,255,.52)!important;
+ background:rgba(3,15,28,.94)!important;
+ box-shadow:0 0 22px rgba(0,155,255,.10),inset 0 0 16px rgba(40,150,210,.045)!important;
+ backdrop-filter:blur(12px)!important;
+ transform:translate(-50%,0)!important;
+ font-size:12px!important;
+}
+body.prime-2d #primeCommandPanel{
+ transform:translate(-50%,0)!important;
+}
+#primeCommandPanel h3{
+ font-size:11px!important;
+ letter-spacing:1.6px!important;
+ margin:0 0 10px!important;
+ padding-bottom:8px!important;
+ border-bottom:1px solid rgba(82,205,255,.18)!important;
+}
+#primeCommandForm{display:flex!important;gap:8px!important}
+#primeCommandInput{
+ min-width:0!important;
+ min-height:40px!important;
+ padding:10px 12px!important;
+ font-size:13px!important;
+ border-radius:6px!important;
+}
+#primeCommandPanel button{
+ padding:9px 12px!important;
+ font-size:10px!important;
+ letter-spacing:.6px!important;
+ white-space:nowrap!important;
+}
+#primePermissionRow{
+ display:flex!important;
+ align-items:center!important;
+ gap:7px!important;
+ margin-top:10px!important;
+}
+#primePermissionStatus{
+ min-width:0!important;
+ font-size:10px!important;
+ line-height:1.5!important;
+}
+@media(max-width:700px){
+ #primeCommandPanel{
+  width:min(66vw,390px)!important;
+  max-width:calc(100vw - 20px)!important;
+  max-height:22vh!important;
+  bottom:9px!important;
+  padding:10px!important;
+ }
+ #primeCommandPanel h3{font-size:10px!important;margin-bottom:8px!important}
+ #primeCommandInput{min-height:36px!important;padding:8px!important;font-size:12px!important}
+ #primeCommandPanel button{padding:8px!important;font-size:9px!important}
+ #primePermissionRow{gap:5px!important;margin-top:8px!important;flex-wrap:wrap!important}
+ #primePermissionStatus{flex-basis:100%!important}
+}
+@media(max-width:380px){
+ #primeCommandPanel{width:calc(100vw - 20px)!important}
+}
+
+
+
+/* JARVIS_COMMAND_PANEL_INTEGRATED_HUD_V1 */
+#primeCommandPanel{
+ left:50%!important;
+ top:auto!important;
+ bottom:clamp(12px,2vh,22px)!important;
+ width:clamp(280px,30vw,410px)!important;
+ max-width:calc(100vw - 24px)!important;
+ max-height:22vh!important;
+ overflow-y:auto!important;
+ box-sizing:border-box!important;
+ padding:12px 14px!important;
+ border:1px solid rgba(85,205,255,.38)!important;
+ border-radius:9px!important;
+ background:linear-gradient(135deg,rgba(5,20,34,.94),rgba(3,12,24,.91))!important;
+ box-shadow:0 0 14px rgba(0,155,255,.08),inset 0 0 12px rgba(70,180,240,.035)!important;
+ backdrop-filter:blur(10px)!important;
+ transform:translate(-50%,0)!important;
+}
+body.prime-2d #primeCommandPanel{transform:translate(-50%,0)!important}
+#primeCommandPanel h3{
+ font-size:10px!important;letter-spacing:1.5px!important;
+ margin:0 0 9px!important;padding-bottom:7px!important;
+ border-bottom:1px solid rgba(85,205,255,.18)!important;
+}
+#primeCommandForm{display:flex!important;gap:7px!important}
+#primeCommandInput{
+ min-width:0!important;min-height:38px!important;
+ padding:9px 11px!important;font-size:12px!important;
+ background:rgba(4,23,38,.9)!important;
+}
+#primeCommandPanel button{padding:8px 10px!important;font-size:10px!important}
+#primePermissionRow{gap:6px!important;margin-top:8px!important}
+#primePermissionStatus{font-size:10px!important;line-height:1.4!important;min-width:0!important}
+@media(max-width:700px){
+ #primeCommandPanel{
+  width:min(64vw,360px)!important;
+  max-width:calc(100vw - 20px)!important;
+  max-height:20vh!important;bottom:8px!important;padding:10px!important;
+ }
+ #primeCommandPanel h3{font-size:9px!important}
+ #primeCommandInput{min-height:34px!important;padding:7px!important;font-size:11px!important}
+ #primeCommandPanel button{padding:7px!important;font-size:9px!important}
+ #primePermissionRow{flex-wrap:wrap!important;gap:5px!important}
+ #primePermissionStatus{flex-basis:100%!important}
+}
+@media(max-width:380px){
+ #primeCommandPanel{width:calc(100vw - 20px)!important}
+}
+
+
+
+/* JARVIS_COMMAND_PANEL_ADAPTIVE_EXPANSION_V1 */
+#primeCommandPanel{
+ left:50%!important;
+ right:auto!important;
+ top:auto!important;
+ bottom:clamp(12px,2vh,22px)!important;
+ width:min(76vw,900px)!important;
+ max-width:calc(100vw - 24px)!important;
+ height:auto!important;
+ max-height:clamp(150px,28vh,260px)!important;
+ overflow-y:auto!important;
+ box-sizing:border-box!important;
+ padding:clamp(16px,2vw,26px)!important;
+ border-radius:12px!important;
+ transform:translate(-50%,0)!important;
+}
+body.prime-2d #primeCommandPanel{transform:translate(-50%,0)!important}
+#primeCommandPanel h3{
+ font-size:clamp(12px,1.2vw,16px)!important;
+ margin:0 0 16px!important;padding-bottom:12px!important;
+ letter-spacing:2px!important;
+}
+#primeCommandForm{gap:12px!important}
+#primeCommandInput{
+ min-height:clamp(46px,6vh,62px)!important;
+ padding:14px 16px!important;font-size:clamp(14px,1.2vw,17px)!important;
+}
+#primeCommandPanel button{
+ padding:clamp(10px,1.2vw,16px)!important;
+ font-size:clamp(11px,1vw,14px)!important;
+}
+#primePermissionRow{gap:10px!important;margin-top:14px!important}
+#primePermissionStatus{font-size:clamp(11px,.95vw,13px)!important;line-height:1.5!important}
+@media(max-width:700px){
+ #primeCommandPanel{
+  width:calc(100vw - 24px)!important;
+  max-height:25vh!important;
+  bottom:8px!important;padding:14px!important;
+ }
+ #primeCommandPanel h3{font-size:12px!important;margin-bottom:11px!important}
+ #primeCommandInput{min-height:42px!important;padding:10px!important;font-size:13px!important}
+ #primeCommandPanel button{padding:9px!important;font-size:10px!important}
+ #primePermissionRow{gap:7px!important;margin-top:10px!important;flex-wrap:wrap!important}
+ #primePermissionStatus{flex-basis:100%!important;font-size:10px!important}
+}
+
+
+
+/* JARVIS_THEME_REACTIVE_GLASS_PANELS_V1 */
+:root{
+ --prime-panel-accent: #58d9ff;
+ --prime-panel-accent-rgb: 88,217,255;
+ --prime-panel-bg: rgba(4,17,31,.88);
+ --prime-panel-text: #d9f6ff;
+}
+body:has(#theme option:checked[value="arctic"]){
+ --prime-panel-accent:#58d9ff;
+ --prime-panel-accent-rgb:88,217,255;
+ --prime-panel-bg:rgba(4,17,31,.88);
+ --prime-panel-text:#d9f6ff;
+}
+body:has(#theme option:checked[value="deep-space"]){
+ --prime-panel-accent:#9a8cff;
+ --prime-panel-accent-rgb:154,140,255;
+ --prime-panel-bg:rgba(13,9,32,.9);
+ --prime-panel-text:#e9e4ff;
+}
+body:has(#theme option:checked[value="minimal"]){
+ --prime-panel-accent:#d7e4ed;
+ --prime-panel-accent-rgb:215,228,237;
+ --prime-panel-bg:rgba(15,21,27,.92);
+ --prime-panel-text:#f0f5f8;
+}
+body:has(#theme option:checked[value="silver"]){
+ --prime-panel-accent:#ff426a;
+ --prime-panel-accent-rgb:255,66,106;
+ --prime-panel-bg:rgba(24,7,27,.92);
+ --prime-panel-text:#ffe0ed;
+}
+body:has(#theme option:checked[value="emerald"]){
+ --prime-panel-accent:#52ffc0;
+ --prime-panel-accent-rgb:82,255,192;
+ --prime-panel-bg:rgba(3,24,22,.9);
+ --prime-panel-text:#d8fff0;
+}
+#primeCards>*,#primeCommandPanel{
+ color:var(--prime-panel-text)!important;
+ background:linear-gradient(145deg,
+  rgba(var(--prime-panel-accent-rgb),.09),
+  var(--prime-panel-bg) 42%,
+  rgba(2,9,19,.94))!important;
+ border:1px solid rgba(var(--prime-panel-accent-rgb),.42)!important;
+ box-shadow:
+  inset 0 1px 0 rgba(255,255,255,.07),
+  inset 0 0 22px rgba(var(--prime-panel-accent-rgb),.035),
+  0 8px 28px rgba(0,0,0,.2),
+  0 0 12px rgba(var(--prime-panel-accent-rgb),.07)!important;
+ backdrop-filter:blur(14px) saturate(125%)!important;
+ -webkit-backdrop-filter:blur(14px) saturate(125%)!important;
+ transition:border-color .3s,box-shadow .3s,background .3s,color .3s!important;
+}
+#primeCards>*{border-radius:10px!important;overflow:hidden}
+#primeCards>* h2,#primeCards>* h3,
+#primeCommandPanel h3{
+ color:var(--prime-panel-accent)!important;
+ text-shadow:0 0 12px rgba(var(--prime-panel-accent-rgb),.22);
+ letter-spacing:1.3px!important;
+}
+#primeCards>* button,#primeCommandPanel button{
+ border-color:rgba(var(--prime-panel-accent-rgb),.5)!important;
+ color:var(--prime-panel-accent)!important;
+ background:rgba(var(--prime-panel-accent-rgb),.075)!important;
+}
+#primeCards>* button:hover,#primeCommandPanel button:hover{
+ background:rgba(var(--prime-panel-accent-rgb),.17)!important;
+ box-shadow:0 0 12px rgba(var(--prime-panel-accent-rgb),.12);
+}
+#primeCommandInput{
+ border-color:rgba(var(--prime-panel-accent-rgb),.48)!important;
+ color:var(--prime-panel-text)!important;
+ background:rgba(0,0,0,.24)!important;
+}
+#primeCommandPanel h3{
+ border-bottom:1px solid rgba(var(--prime-panel-accent-rgb),.24)!important;
+}
+#primePermissionStatus{color:var(--prime-panel-text)!important;opacity:.84}
+#primeCards>*:before{
+ border-color:rgba(var(--prime-panel-accent-rgb),.5)!important;
+}
+
+
+
+/* JARVIS_PREMIUM_THEME_CARDS_V2 */
+#primeCards>*,
+#primeCommandPanel{
+  position:relative!important;
+  isolation:isolate;
+  color:var(--prime-panel-text)!important;
+  background:
+    radial-gradient(ellipse at 0% 0%,rgba(var(--prime-panel-accent-rgb),.16),transparent 58%),
+    linear-gradient(145deg,rgba(var(--prime-panel-accent-rgb),.075),transparent 45%),
+    linear-gradient(155deg,rgba(14,24,39,.96),var(--prime-panel-bg) 68%,rgba(2,7,16,.97))!important;
+  border:1px solid rgba(var(--prime-panel-accent-rgb),.48)!important;
+  border-radius:15px!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.13),
+    inset 1px 0 0 rgba(var(--prime-panel-accent-rgb),.08),
+    inset 0 -18px 34px rgba(0,0,0,.14),
+    0 10px 30px rgba(0,0,0,.27),
+    0 0 18px rgba(var(--prime-panel-accent-rgb),.075)!important;
+  backdrop-filter:blur(18px) saturate(145%)!important;
+  -webkit-backdrop-filter:blur(18px) saturate(145%)!important;
+  transition:background .28s ease,border-color .28s ease,box-shadow .28s ease,transform .28s ease!important;
+}
+#primeCards>*{
+  overflow:hidden!important;
+  padding:clamp(12px,1.15vw,19px)!important;
+}
+#primeCards>*::before{
+  content:"";
+  position:absolute;
+  top:0;left:9%;right:9%;
+  height:1px;
+  background:linear-gradient(90deg,transparent,rgba(var(--prime-panel-accent-rgb),.95),transparent);
+  box-shadow:0 0 12px rgba(var(--prime-panel-accent-rgb),.45);
+  pointer-events:none;
+}
+#primeCards>*::after{
+  content:"";
+  position:absolute;
+  top:0;right:0;
+  width:68px;height:68px;
+  background:radial-gradient(circle at top right,rgba(var(--prime-panel-accent-rgb),.12),transparent 72%);
+  pointer-events:none;
+}
+#primeCards>* h2,
+#primeCards>* h3,
+#primeCommandPanel h2,
+#primeCommandPanel h3{
+  color:var(--prime-panel-accent)!important;
+  letter-spacing:1.5px!important;
+  text-transform:uppercase;
+  text-shadow:0 0 15px rgba(var(--prime-panel-accent-rgb),.28);
+}
+#primeCards>* h2,
+#primeCards>* h3{
+  padding-bottom:9px!important;
+  border-bottom:1px solid rgba(var(--prime-panel-accent-rgb),.22);
+}
+#primeCards>* p,
+#primeCards>* span,
+#primeCards>* label,
+#primeCards>* li{
+  text-shadow:0 1px 8px rgba(0,0,0,.2);
+}
+#primeCards>* button,
+#primeCommandPanel button{
+  border:1px solid rgba(var(--prime-panel-accent-rgb),.52)!important;
+  border-radius:9px!important;
+  color:var(--prime-panel-accent)!important;
+  background:linear-gradient(135deg,rgba(var(--prime-panel-accent-rgb),.13),rgba(0,0,0,.2))!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 3px 12px rgba(0,0,0,.14);
+  transition:background .2s ease,box-shadow .2s ease,border-color .2s ease,transform .2s ease!important;
+}
+#primeCards>* button:hover,
+#primeCommandPanel button:hover{
+  background:rgba(var(--prime-panel-accent-rgb),.2)!important;
+  border-color:rgba(var(--prime-panel-accent-rgb),.9)!important;
+  box-shadow:0 0 17px rgba(var(--prime-panel-accent-rgb),.17),inset 0 1px 0 rgba(255,255,255,.12)!important;
+  transform:translateY(-1px);
+}
+#primeCards>* input,
+#primeCards>* select,
+#primeCards>* textarea,
+#primeCommandInput{
+  color:var(--prime-panel-text)!important;
+  background:rgba(0,0,0,.27)!important;
+  border:1px solid rgba(var(--prime-panel-accent-rgb),.4)!important;
+  border-radius:8px!important;
+  outline-color:var(--prime-panel-accent)!important;
+}
+#primeCards>* hr{border-color:rgba(var(--prime-panel-accent-rgb),.2)!important}
+#primeCards>*:hover,
+#primeCommandPanel:hover{
+  border-color:rgba(var(--prime-panel-accent-rgb),.68)!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.15),
+    0 12px 34px rgba(0,0,0,.3),
+    0 0 22px rgba(var(--prime-panel-accent-rgb),.11)!important;
+}
+@media(prefers-reduced-motion:reduce){
+  #primeCards>*,#primeCards>* button,#primeCommandPanel,#primeCommandPanel button{
+    transition:none!important;
+  }
+}
+
+
+
+/* JARVIS_COMMAND_PANEL_UNDER_BLOB_V1 */
+#primeCommandPanel{
+  position:fixed!important;
+  left:50%!important;
+  right:auto!important;
+  top:auto!important;
+  bottom:clamp(12px,2.2vh,26px)!important;
+  transform:translateX(-50%)!important;
+  width:clamp(280px,42vw,560px)!important;
+  max-width:calc(100vw - 32px)!important;
+  max-height:24vh!important;
+  overflow-y:auto!important;
+  z-index:20!important;
+}
+@media(max-width:700px){
+  #primeCommandPanel{
+    width:calc(100vw - 28px)!important;
+    max-width:520px!important;
+    bottom:12px!important;
+    max-height:22vh!important;
+  }
+}
+
+
+
+/* JARVIS_COMMAND_PANEL_PROPORTIONAL_V2 */
+#primeCommandPanel{
+  width:clamp(340px,46vw,620px)!important;
+  max-width:calc(100vw - 36px)!important;
+  max-height:clamp(150px,25vh,280px)!important;
+  padding:clamp(15px,1.5vw,23px)!important;
+  border-radius:17px!important;
+  bottom:clamp(14px,2.5vh,30px)!important;
+}
+#primeCommandPanel h3{
+  font-size:clamp(13px,1.1vw,16px)!important;
+  margin-bottom:12px!important;
+}
+#primeCommandInput{
+  min-height:42px!important;
+  padding:10px 12px!important;
+  font-size:14px!important;
+}
+#primeCommandPanel button{
+  min-height:38px!important;
+  padding:8px 13px!important;
+}
+@media(max-width:700px){
+  #primeCommandPanel{
+    width:calc(100vw - 28px)!important;
+    max-width:560px!important;
+    max-height:24vh!important;
+    padding:14px!important;
+    bottom:12px!important;
+  }
+}
+
+
+
+/* JARVIS_COMMAND_PANEL_DOUBLE_SCALE_V3 */
+#primeCommandPanel{
+  width:clamp(420px,58vw,760px)!important;
+  max-width:calc(100vw - 32px)!important;
+  max-height:clamp(190px,32vh,340px)!important;
+  padding:clamp(20px,2.2vw,32px)!important;
+  border-radius:22px!important;
+  bottom:clamp(12px,2vh,24px)!important;
+  box-sizing:border-box!important;
+}
+#primeCommandPanel h3{
+  font-size:clamp(16px,1.45vw,21px)!important;
+  margin-bottom:16px!important;
+  padding-bottom:12px!important;
+}
+#primeCommandInput{
+  min-height:54px!important;
+  padding:14px 16px!important;
+  font-size:clamp(15px,1.2vw,18px)!important;
+  border-radius:12px!important;
+}
+#primeCommandPanel button{
+  min-height:48px!important;
+  padding:12px 18px!important;
+  font-size:clamp(13px,1vw,16px)!important;
+  border-radius:11px!important;
+}
+@media(max-width:700px){
+  #primeCommandPanel{
+    width:calc(100vw - 24px)!important;
+    max-width:620px!important;
+    max-height:30vh!important;
+    padding:18px!important;
+    bottom:10px!important;
+  }
+  #primeCommandPanel h3{font-size:16px!important}
+  #primeCommandInput{min-height:48px!important}
+  #primeCommandPanel button{min-height:44px!important}
+}
+
+
+
+/* JARVIS_COMMAND_PANEL_LIFT_WIDEN_V4 */
+#primeCommandPanel{
+  width:clamp(504px,69.6vw,912px)!important;
+  max-width:calc(100vw - 36px)!important;
+  bottom:clamp(28px,5vh,48px)!important;
+  max-height:clamp(190px,30vh,330px)!important;
+  box-sizing:border-box!important;
+}
+@media(max-width:700px){
+  #primeCommandPanel{
+    width:calc(100vw - 28px)!important;
+    max-width:680px!important;
+    bottom:28px!important;
+    max-height:28vh!important;
+  }
+}
+
+
+
+/* JARVIS_COMMAND_PANEL_LIFT_MORE_V5 */
+#primeCommandPanel{
+  bottom:clamp(48px,8vh,76px)!important;
+}
+@media(max-width:700px){
+  #primeCommandPanel{bottom:44px!important}
+}
+
+
+
+/* JARVIS_HUD_PREMIUM_FINISH_V6 */
+#primeCards>*,
+#primeCommandPanel{
+  isolation:isolate!important;
+  background:
+    radial-gradient(ellipse at 8% 0%,rgba(var(--prime-panel-accent-rgb),.16),transparent 48%),
+    linear-gradient(135deg,rgba(255,255,255,.045),transparent 38%),
+    linear-gradient(155deg,rgba(13,25,42,.97),var(--prime-panel-bg) 62%,rgba(2,7,16,.98))!important;
+  border:1px solid rgba(var(--prime-panel-accent-rgb),.52)!important;
+  border-radius:18px!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.15),
+    inset 0 0 0 1px rgba(var(--prime-panel-accent-rgb),.045),
+    inset 0 -24px 40px rgba(0,0,0,.13),
+    0 12px 32px rgba(0,0,0,.28),
+    0 0 20px rgba(var(--prime-panel-accent-rgb),.075)!important;
+  backdrop-filter:blur(20px) saturate(150%)!important;
+  -webkit-backdrop-filter:blur(20px) saturate(150%)!important;
+}
+#primeCards>*{
+  overflow:hidden!important;
+}
+#primeCards>*:before,
+#primeCommandPanel:before{
+  content:""!important;
+  position:absolute!important;
+  top:0!important;
+  left:12%!important;
+  right:12%!important;
+  height:1px!important;
+  border:0!important;
+  background:linear-gradient(90deg,transparent,rgba(var(--prime-panel-accent-rgb),.95),transparent)!important;
+  box-shadow:0 0 12px rgba(var(--prime-panel-accent-rgb),.35)!important;
+  pointer-events:none!important;
+}
+#primeCards>* h2,
+#primeCards>* h3,
+#primeCommandPanel h2,
+#primeCommandPanel h3{
+  color:var(--prime-panel-accent)!important;
+  font-weight:650!important;
+  letter-spacing:1.6px!important;
+  text-shadow:0 0 14px rgba(var(--prime-panel-accent-rgb),.24)!important;
+}
+#primeCards>* h2,
+#primeCards>* h3{
+  padding-bottom:10px!important;
+  border-bottom:1px solid rgba(var(--prime-panel-accent-rgb),.23)!important;
+}
+#primeCards>* button,
+#primeCommandPanel button{
+  border:1px solid rgba(var(--prime-panel-accent-rgb),.58)!important;
+  border-radius:10px!important;
+  background:linear-gradient(135deg,rgba(var(--prime-panel-accent-rgb),.16),rgba(0,0,0,.22))!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.11),0 4px 12px rgba(0,0,0,.18)!important;
+  letter-spacing:.45px!important;
+}
+#primeCards>* button:hover,
+#primeCommandPanel button:hover{
+  border-color:var(--prime-panel-accent)!important;
+  background:rgba(var(--prime-panel-accent-rgb),.22)!important;
+  box-shadow:0 0 18px rgba(var(--prime-panel-accent-rgb),.17),inset 0 1px 0 rgba(255,255,255,.15)!important;
+}
+#primeCards>* input,
+#primeCards>* select,
+#primeCards>* textarea,
+#primeCommandInput{
+  border:1px solid rgba(var(--prime-panel-accent-rgb),.44)!important;
+  border-radius:10px!important;
+  background:rgba(0,4,12,.42)!important;
+  box-shadow:inset 0 2px 8px rgba(0,0,0,.16)!important;
+}
+#primeCards>* input:focus,
+#primeCards>* select:focus,
+#primeCards>* textarea:focus,
+#primeCommandInput:focus{
+  border-color:var(--prime-panel-accent)!important;
+  box-shadow:0 0 0 2px rgba(var(--prime-panel-accent-rgb),.12),0 0 16px rgba(var(--prime-panel-accent-rgb),.1)!important;
+}
+#primeCards>* hr{
+  border-color:rgba(var(--prime-panel-accent-rgb),.2)!important;
+}
+@media(prefers-reduced-motion:no-preference){
+  #primeCards>*,
+  #primeCommandPanel{
+    transition:border-color .25s ease,box-shadow .25s ease,background .25s ease!important;
+  }
+  #primeCards>*:hover{
+    border-color:rgba(var(--prime-panel-accent-rgb),.78)!important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.17),0 14px 36px rgba(0,0,0,.3),0 0 24px rgba(var(--prime-panel-accent-rgb),.12)!important;
+  }
+}
+
+
+
+/* JARVIS_WHOLE_HUD_THEME_SYSTEM_V1 */
+:root{
+ --prime-hud-accent:#58d9ff;
+ --prime-hud-rgb:88,217,255;
+ --prime-hud-text:#d9f6ff;
+ --prime-hud-surface:rgba(4,17,31,.9);
+ --prime-hud-bg:#030914;
+}
+body:has(#theme option:checked[value="arctic"]){
+ --prime-hud-accent:#58d9ff;--prime-hud-rgb:88,217,255;
+ --prime-hud-text:#d9f6ff;--prime-hud-surface:rgba(4,17,31,.9);--prime-hud-bg:#030914;
+}
+body:has(#theme option:checked[value="deep-space"]){
+ --prime-hud-accent:#a99aff;--prime-hud-rgb:169,154,255;
+ --prime-hud-text:#ece7ff;--prime-hud-surface:rgba(17,10,39,.92);--prime-hud-bg:#070513;
+}
+body:has(#theme option:checked[value="minimal"]){
+ --prime-hud-accent:#dce7ef;--prime-hud-rgb:220,231,239;
+ --prime-hud-text:#f1f5f8;--prime-hud-surface:rgba(15,21,27,.94);--prime-hud-bg:#080c11;
+}
+body:has(#theme option:checked[value="silver"]){
+ --prime-hud-accent:#ff426a;--prime-hud-rgb:255,66,106;
+ --prime-hud-text:#ffe0ed;--prime-hud-surface:rgba(24,7,27,.94);--prime-hud-bg:#120716;
+}
+body:has(#theme option:checked[value="emerald"]){
+ --prime-hud-accent:#52ffc0;--prime-hud-rgb:82,255,192;
+ --prime-hud-text:#d8fff0;--prime-hud-surface:rgba(3,24,22,.93);--prime-hud-bg:#020d0b;
+}
+body{
+ color:var(--prime-hud-text);
+ transition:color .3s ease,background-color .3s ease;
+}
+header,.controls,header button,header select,
+#theme,#primeCards>*,#primeCommandPanel{
+ color:var(--prime-hud-text)!important;
+}
+header,header button,header select,.controls button,.controls select,#theme{
+ border-color:rgba(var(--prime-hud-rgb),.48)!important;
+}
+header button,.controls button{
+ background:linear-gradient(135deg,rgba(var(--prime-hud-rgb),.12),rgba(0,0,0,.22))!important;
+}
+header select,.controls select,#theme{
+ background-color:var(--prime-hud-surface)!important;
+}
+#primeCards>*,#primeCommandPanel{
+ --prime-panel-accent:var(--prime-hud-accent)!important;
+ --prime-panel-accent-rgb:var(--prime-hud-rgb)!important;
+ --prime-panel-text:var(--prime-hud-text)!important;
+ --prime-panel-bg:var(--prime-hud-surface)!important;
+ border-color:rgba(var(--prime-hud-rgb),.52)!important;
+}
+#primeCards>* h2,#primeCards>* h3,
+#primeCommandPanel h2,#primeCommandPanel h3,
+#primeCards>* button,#primeCommandPanel button{
+ color:var(--prime-hud-accent)!important;
+}
+#primeCards>* button,#primeCommandPanel button,
+#primeCards>* input,#primeCards>* select,
+#primeCards>* textarea,#primeCommandInput{
+ border-color:rgba(var(--prime-hud-rgb),.48)!important;
+}
+#primeCards>* button,#primeCommandPanel button{
+ background:rgba(var(--prime-hud-rgb),.09)!important;
+}
+#primeCards>* input,#primeCards>* select,
+#primeCards>* textarea,#primeCommandInput{
+ color:var(--prime-hud-text)!important;
+}
+#theme option{background:var(--prime-hud-bg);color:var(--prime-hud-text)}
+
+
+/* JARVIS_FIXED_SIDE_SLIDE_V3 */
+@keyframes primeCardsEnterLeft {
+ from { translate:-110vw 0; }
+ to { translate:0 0; }
+}
+@keyframes primeCardsEnterRight {
+ from { translate:110vw 0; }
+ to { translate:0 0; }
+}
+body.prime-2d #primeCards .prime-column:first-child>.prime-card {
+ animation:primeCardsEnterLeft .9s cubic-bezier(.16,1,.3,1) both;
+}
+body.prime-2d #primeCards .prime-column:last-child>.prime-card {
+ animation:primeCardsEnterRight .9s cubic-bezier(.16,1,.3,1) both;
+}
+body.prime-2d #primeCards .prime-card:nth-child(2) {
+ animation-delay:.12s;
+}
+body.prime-2d #primeCommandPanel {
+ animation:primeCardsEnterRight .9s cubic-bezier(.16,1,.3,1) both;
+}
+@media(prefers-reduced-motion:reduce) {
+ body.prime-2d #primeCards .prime-card,
+ body.prime-2d #primeCommandPanel { animation:none!important; }
+}
+
+
+/* JARVIS_COMMAND_PANEL_BOTTOM_SLIDE_V1 */
+@keyframes primeCommandEnterBottom {
+ from { translate:0 110vh; }
+ to { translate:0 0; }
+}
+body.prime-2d #primeCommandPanel {
+ animation:primeCommandEnterBottom .9s cubic-bezier(.16,1,.3,1) both!important;
+}
+@media(prefers-reduced-motion:reduce) {
+ body.prime-2d #primeCommandPanel { animation:none!important; }
+}
+
+
+/* JARVIS_DESKTOP_COMPAT_V1 */
+@media (min-width: 1000px) {
+  header { padding: 20px 26px; gap: 18px; }
+  .brand { font-size: 13px; letter-spacing: 3.5px; }
+  .controls { gap: 10px; }
+  button, select { min-height: 40px; cursor: pointer; }
+  button:focus-visible, select:focus-visible, input:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+  #chat {
+    width: min(44vw, 680px);
+    height: min(68vh, 680px);
+    max-height: calc(100vh - 120px);
+    left: auto;
+    right: 24px;
+    bottom: 24px;
+    transform: none;
+    border: 1px solid var(--accent);
+    box-shadow: 0 18px 60px rgba(0,0,0,.35);
+  }
+  #primeCommandPanel {
+    width: min(48vw, 760px);
+    max-width: calc(100vw - 48px);
+    bottom: 22px;
+  }
+  #status { left: 20px; bottom: 18px; font-size: 11px; }
+  #messages { padding: 20px; font-size: 15px; }
+  .input { padding: 14px; }
+}
+@media (min-width: 701px) and (max-width: 999px) {
+  #chat { width: min(76vw, 680px); }
+  #primeCommandPanel { width: min(78vw, 760px); }
+}
+@media (min-width: 1000px) and (max-height: 650px) {
+  #chat { height: 58vh; bottom: 14px; }
+  header { padding-top: 12px; padding-bottom: 12px; }
+}
+
+</style>
+
+<style>
+
+/* JARVIS_FULLSCREEN_CHAT_V1 */
+
+#jarvisFullChatButton {
+ position:fixed;
+ bottom:22px;
+ left:50%;
+ transform:translateX(-50%);
+ z-index:9000;
+ padding:13px 30px;
+ border:1px solid #37caff;
+ border-radius:30px;
+ background:rgba(0,18,40,.85);
+ color:#bcefff;
+ font:600 13px Arial,sans-serif;
+ letter-spacing:2px;
+ box-shadow:0 0 22px #00aeff66,inset 0 0 14px #00aeff22;
+ cursor:pointer;
+ transition:opacity .35s,transform .35s;
+}
+
+#jarvisFullChatButton:hover {
+ box-shadow:0 0 35px #00c8ff;
+}
+
+#jarvisEnergyBurst {
+ position:fixed;
+ left:50%;
+ top:50%;
+ width:12px;
+ height:12px;
+ border-radius:50%;
+ pointer-events:none;
+ z-index:9500;
+ opacity:0;
+ transform:translate(-50%,-50%) scale(0);
+ background:#eaffff;
+ box-shadow:
+ 0 0 35px 12px #ffffff,
+ 0 0 90px 35px #00c8ff,
+ 0 0 180px 65px #006dff;
+}
+
+body.jarvis-burst #jarvisEnergyBurst {
+ animation:jarvisExplosion .8s ease-out forwards;
+}
+
+@keyframes jarvisExplosion {
+ 0% {
+  opacity:0;
+  transform:translate(-50%,-50%) scale(.1);
+ }
+ 25% {
+  opacity:1;
+  transform:translate(-50%,-50%) scale(2);
+ }
+ 65% {
+  opacity:.85;
+  transform:translate(-50%,-50%) scale(13);
+ }
+ 100% {
+  opacity:0;
+  transform:translate(-50%,-50%) scale(25);
+ }
+}
+
+body.jarvis-chat-transition canvas {
+ transition:
+  transform .55s cubic-bezier(.65,0,.35,1),
+  opacity .45s ease !important;
+ transform:scale(.03) rotate(540deg) !important;
+ opacity:0 !important;
+}
+
+body.jarvis-chat-transition #primeCards {
+ transition:
+  transform .65s cubic-bezier(.65,0,.35,1),
+  opacity .45s ease !important;
+ transform:translateY(-110vh) !important;
+ opacity:0 !important;
+ pointer-events:none !important;
+}
+
+body.jarvis-chat-transition #primeCommandPanel {
+ transition:
+  transform .65s ease,
+  opacity .4s ease !important;
+ transform:translateY(110vh) !important;
+ opacity:0 !important;
+ pointer-events:none !important;
+}
+
+body.jarvis-chat-transition #jarvisFullChatButton {
+ opacity:0;
+ transform:translate(-50%,80px);
+ pointer-events:none;
+}
+
+#jarvisFullChat {
+ position:fixed;
+ inset:0;
+ z-index:10000;
+ display:flex;
+ flex-direction:column;
+ padding:env(safe-area-inset-top,12px) 12px
+         env(safe-area-inset-bottom,12px);
+ box-sizing:border-box;
+ background:
+ radial-gradient(circle at 50% 0%,#07305b 0%,transparent 55%),
+ #020914;
+ border:1px solid #1474ae;
+ color:#c9f4ff;
+ transform:translateY(110%);
+ opacity:0;
+ visibility:hidden;
+ transition:
+  transform .75s cubic-bezier(.16,1,.3,1),
+  opacity .4s ease,
+  visibility 0s linear .75s;
+}
+
+body.jarvis-full-chat #jarvisFullChat {
+ transform:translateY(0);
+ opacity:1;
+ visibility:visible;
+ transition:
+  transform .75s cubic-bezier(.16,1,.3,1),
+  opacity .4s ease,
+  visibility 0s;
+}
+
+#jarvisFullChatHeader {
+ flex:0 0 auto;
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ padding:15px 12px;
+ border-bottom:1px solid #14648c;
+ font:600 16px Arial,sans-serif;
+ letter-spacing:2px;
+}
+
+#jarvisFullChatClose {
+ background:transparent;
+ border:1px solid #1b8fc4;
+ border-radius:8px;
+ color:#c9f4ff;
+ font-size:24px;
+ width:42px;
+ height:42px;
+ cursor:pointer;
+}
+
+#jarvisFullChatBody {
+ flex:1;
+ min-height:0;
+ display:flex;
+ flex-direction:column;
+ padding:12px 4px;
+ overflow:hidden;
+}
+
+#jarvisFullChatBody #primeChatLog {
+ flex:1;
+ min-height:0;
+ height:auto !important;
+ max-height:none !important;
+ overflow-y:auto !important;
+ visibility:visible !important;
+ opacity:1 !important;
+ display:block !important;
+ padding:15px;
+ font:14px/1.65 Arial,sans-serif;
+ white-space:pre-wrap;
+ overflow-wrap:anywhere;
+ background:rgba(0,18,38,.45);
+ border:1px solid #164d73;
+ border-radius:12px;
+}
+
+#jarvisFullChatBody #primeChatForm {
+ flex:0 0 auto;
+ display:flex !important;
+ visibility:visible !important;
+ opacity:1 !important;
+ margin-top:12px;
+ width:100%;
+}
+
+#jarvisFullChatBody #primeChatInput {
+ flex:1;
+ min-width:0;
+}
+
+@media (prefers-reduced-motion:reduce) {
+ #jarvisFullChat,
+ #jarvisEnergyBurst,
+ body.jarvis-chat-transition canvas,
+ body.jarvis-chat-transition #primeCards {
+  animation:none !important;
+  transition:none !important;
+ }
+}
+
+</style>
+<style>
+
+/* JARVIS_SMOOTH_ENERGY_WAVE_V1 */
+
+/* Soft expanding energy wave */
+#jarvisEnergyBurst {
+ width:90px !important;
+ height:90px !important;
+ border-radius:50% !important;
+ background:transparent !important;
+ border:1.5px solid rgba(70,210,255,.75) !important;
+ box-shadow:
+ 0 0 12px rgba(0,190,255,.3),
+ inset 0 0 12px rgba(0,190,255,.2) !important;
+ filter:blur(.4px);
+ opacity:0;
+ transform:translate(-50%,-50%) scale(.15);
+}
+
+body.jarvis-burst #jarvisEnergyBurst {
+ animation:jarvisSmoothWave 1.35s cubic-bezier(.16,.65,.3,1) forwards !important;
+}
+
+@keyframes jarvisSmoothWave {
+ 0% {
+  opacity:0;
+  transform:translate(-50%,-50%) scale(.15);
+ }
+ 18% {
+  opacity:.8;
+  transform:translate(-50%,-50%) scale(.5);
+ }
+ 45% {
+  opacity:.65;
+  transform:translate(-50%,-50%) scale(3);
+ }
+ 75% {
+  opacity:.25;
+  transform:translate(-50%,-50%) scale(9);
+ }
+ 100% {
+  opacity:0;
+  transform:translate(-50%,-50%) scale(17);
+ }
+}
+
+/* Gentle contraction instead of rapid collapse */
+body.jarvis-chat-transition canvas {
+ transition:
+  transform 1.1s cubic-bezier(.4,0,.2,1),
+  opacity .85s ease !important;
+ transform:scale(.08) rotate(90deg) !important;
+ opacity:0 !important;
+}
+
+/* Cards glide out */
+body.jarvis-chat-transition #primeCards {
+ transition:
+  transform 1s cubic-bezier(.4,0,.2,1),
+  opacity .8s ease !important;
+ transform:translateY(-105vh) !important;
+ opacity:0 !important;
+}
+
+/* Command panel glides downward */
+body.jarvis-chat-transition #primeCommandPanel {
+ transition:
+  transform 1s cubic-bezier(.4,0,.2,1),
+  opacity .8s ease !important;
+ transform:translateY(105vh) !important;
+ opacity:0 !important;
+}
+
+/* Smooth chat entrance */
+#jarvisFullChat {
+ transition:
+  transform 1.05s cubic-bezier(.22,1,.36,1),
+  opacity .7s ease,
+  visibility 0s linear 1.05s !important;
+}
+
+body.jarvis-full-chat #jarvisFullChat {
+ transition:
+  transform 1.05s cubic-bezier(.22,1,.36,1),
+  opacity .7s ease,
+  visibility 0s !important;
+}
+
+</style>
+<style>
+
+/* JARVIS_CHAT_LIVE_BACKGROUND_V1 */
+
+/* Keep the original HUD canvas visible behind chat */
+body.jarvis-chat-transition canvas {
+ opacity:1 !important;
+ transform:none !important;
+ transition:opacity 1s ease !important;
+}
+
+/* Transparent full-screen chat surface */
+#jarvisFullChat {
+ background:rgba(1,7,18,.45) !important;
+ backdrop-filter:none !important;
+ -webkit-backdrop-filter:none !important;
+}
+
+/* Preserve background animation visibility */
+body.jarvis-full-chat #jarvisFullChat {
+ background:linear-gradient(
+  180deg,
+  rgba(1,8,20,.35),
+  rgba(1,8,20,.55)
+ ) !important;
+}
+
+/* Chat log glass appearance */
+#jarvisFullChatBody #primeChatLog {
+ background:rgba(2,15,35,.48) !important;
+ backdrop-filter:blur(8px);
+ -webkit-backdrop-filter:blur(8px);
+ border:1px solid rgba(70,195,255,.22) !important;
+ box-shadow:inset 0 0 35px rgba(0,145,255,.04);
+}
+
+/* Header remains readable */
+#jarvisFullChatHeader {
+ background:rgba(0,15,32,.3);
+ backdrop-filter:blur(6px);
+ -webkit-backdrop-filter:blur(6px);
+}
+
+</style>
+<style>
+
+/* JARVIS_CHAT_2D_ONLY_V1 */
+
+/* Hidden by default in 3D mode */
+html body #jarvisFullChatButton {
+ display:none !important;
+ visibility:hidden !important;
+ opacity:0 !important;
+ pointer-events:none !important;
+}
+
+/* Visible only in 2D mode */
+html body.prime-2d:not(.jarvis-chat-transition):not(.jarvis-full-chat)
+#jarvisFullChatButton {
+ display:flex !important;
+ visibility:visible !important;
+ opacity:1 !important;
+ pointer-events:auto !important;
+}
+
+</style>
+<style>
+
+/* JARVIS_CHAT_INPUT_SIZE_V1 */
+
+#jarvisFullChatBody #primeChatInput {
+ min-height:54px !important;
+ padding:14px 16px !important;
+ font-size:16px !important;
+ border-radius:12px !important;
+ box-sizing:border-box !important;
+}
+
+#jarvisFullChatBody #primeChatForm {
+ min-height:58px !important;
+ align-items:stretch !important;
+ gap:10px !important;
+}
+
+</style>
+<style>
+
+/* JARVIS_CHAT_INPUT_LARGE_V2 */
+
+#jarvisFullChatBody #primeChatInput {
+ height:76px !important;
+ min-height:76px !important;
+ padding:20px 22px !important;
+ font-size:20px !important;
+ line-height:1.5 !important;
+ border-radius:16px !important;
+ box-sizing:border-box !important;
+}
+
+#jarvisFullChatBody #primeChatForm {
+ min-height:80px !important;
+ align-items:stretch !important;
+ gap:12px !important;
+}
+
+#jarvisFullChatBody #primeChatForm button {
+ min-height:76px !important;
+ font-size:17px !important;
+ padding:0 20px !important;
+ border-radius:14px !important;
+}
+
+</style>
+<style>
+
+/* JARVIS_RESPONSE_FONT_V1 */
+
+#jarvisFullChatBody #primeChatLog {
+ font-size:20px !important;
+ line-height:1.7 !important;
+ letter-spacing:0.3px !important;
+}
+
+</style>
+<style>
+
+/* JARVIS_CHAT_BUBBLES_V1 */
+
+#jarvisFullChatBody #primeChatLog {
+ display:flex !important;
+ flex-direction:column !important;
+ align-items:stretch !important;
+ gap:18px !important;
+ padding:22px 16px !important;
+ box-sizing:border-box !important;
+}
+
+/* Shared message appearance */
+#jarvisFullChatBody #primeChatLog
+.jarvis-message-bubble {
+ display:block;
+ width:fit-content;
+ max-width:86%;
+ min-width:0;
+ padding:17px 21px;
+ border-radius:18px;
+ font-size:20px !important;
+ line-height:1.65 !important;
+ white-space:pre-wrap;
+ overflow-wrap:anywhere;
+ box-sizing:border-box;
+ position:relative;
+ animation:jarvisBubbleEnter .35s ease-out both;
+}
+
+/* User messages — right side */
+#jarvisFullChatBody #primeChatLog
+.jarvis-user-bubble {
+ align-self:flex-end;
+ margin-left:auto;
+ color:#e5f7ff;
+ text-align:left;
+ background:linear-gradient(
+  135deg,
+  rgba(17,87,155,.72),
+  rgba(8,45,92,.76)
+ );
+ border:1px solid rgba(83,172,255,.48);
+ border-bottom-right-radius:5px;
+ box-shadow:
+  0 4px 24px rgba(0,65,145,.16),
+  inset 0 1px rgba(180,225,255,.12);
+}
+
+/* JARVIS messages — left side */
+#jarvisFullChatBody #primeChatLog
+.jarvis-ai-bubble {
+ align-self:flex-start;
+ margin-right:auto;
+ color:#c9faff;
+ text-align:left;
+ background:linear-gradient(
+  145deg,
+  rgba(5,43,61,.82),
+  rgba(3,24,43,.76)
+ );
+ border:1px solid rgba(42,222,237,.4);
+ border-bottom-left-radius:5px;
+ box-shadow:
+  0 4px 26px rgba(0,200,230,.09),
+  inset 0 1px rgba(130,255,255,.09);
+}
+
+/* Soft accent on JARVIS replies */
+#jarvisFullChatBody #primeChatLog
+.jarvis-ai-bubble::before {
+ content:"";
+ position:absolute;
+ left:0;
+ top:18px;
+ bottom:18px;
+ width:2px;
+ background:linear-gradient(
+  transparent,
+  rgba(72,235,255,.75),
+  transparent
+ );
+ border-radius:5px;
+}
+
+/* Gentle message entrance */
+@keyframes jarvisBubbleEnter {
+ from {
+  opacity:0;
+  transform:translateY(9px);
+ }
+ to {
+  opacity:1;
+  transform:translateY(0);
+ }
+}
+
+@media(max-width:600px) {
+ #jarvisFullChatBody #primeChatLog
+ .jarvis-message-bubble {
+  max-width:92%;
+  padding:15px 17px;
+ }
+}
+
+@media(prefers-reduced-motion:reduce) {
+ #jarvisFullChatBody #primeChatLog
+ .jarvis-message-bubble {
+  animation:none;
+ }
+}
+
+</style>
+<style>
+
+/* JARVIS_CHAT_THEME_SYNC_V1 */
+
+#jarvisFullChat {
+ --chat-accent:65,205,255;
+ --chat-secondary:15,95,175;
+ --chat-text:#d8f6ff;
+ --chat-bg:3,13,29;
+
+ color:var(--chat-text) !important;
+
+ background:
+ radial-gradient(
+  circle at 50% 0%,
+  rgba(var(--chat-accent),.13),
+  transparent 58%
+ ),
+ rgba(var(--chat-bg),.55) !important;
+
+ border-color:rgba(var(--chat-accent),.35) !important;
+}
+
+#jarvisFullChatHeader {
+ color:var(--chat-text) !important;
+ border-color:rgba(var(--chat-accent),.3) !important;
+ background:rgba(var(--chat-bg),.35) !important;
+}
+
+#jarvisFullChatClose {
+ color:var(--chat-text) !important;
+ border-color:rgba(var(--chat-accent),.55) !important;
+ box-shadow:0 0 14px rgba(var(--chat-accent),.12);
+}
+
+#jarvisFullChatBody #primeChatLog {
+ background:rgba(var(--chat-bg),.46) !important;
+ border-color:rgba(var(--chat-accent),.25) !important;
+ color:var(--chat-text) !important;
+}
+
+#jarvisFullChatBody #primeChatLog
+.jarvis-user-bubble {
+ color:var(--chat-text) !important;
+ background:linear-gradient(
+  135deg,
+  rgba(var(--chat-secondary),.73),
+  rgba(var(--chat-bg),.84)
+ ) !important;
+ border-color:rgba(var(--chat-accent),.4) !important;
+ box-shadow:0 5px 24px rgba(var(--chat-accent),.1) !important;
+}
+
+#jarvisFullChatBody #primeChatLog
+.jarvis-ai-bubble {
+ color:var(--chat-text) !important;
+ background:linear-gradient(
+  145deg,
+  rgba(var(--chat-accent),.15),
+  rgba(var(--chat-bg),.84)
+ ) !important;
+ border-color:rgba(var(--chat-accent),.38) !important;
+ box-shadow:0 4px 24px rgba(var(--chat-accent),.09) !important;
+}
+
+#jarvisFullChatBody #primeChatLog
+.jarvis-ai-bubble::before {
+ background:linear-gradient(
+  transparent,
+  rgba(var(--chat-accent),.8),
+  transparent
+ ) !important;
+}
+
+#jarvisFullChatBody #primeChatInput {
+ color:var(--chat-text) !important;
+ background:rgba(var(--chat-bg),.8) !important;
+ border:1px solid rgba(var(--chat-accent),.4) !important;
+ outline-color:rgba(var(--chat-accent),.8) !important;
+}
+
+#jarvisFullChatBody #primeChatForm button {
+ color:var(--chat-text) !important;
+ background:rgba(var(--chat-secondary),.65) !important;
+ border:1px solid rgba(var(--chat-accent),.5) !important;
+ box-shadow:0 0 15px rgba(var(--chat-accent),.12);
+}
+
+#jarvisFullChatBody #primeChatForm button:active {
+ box-shadow:0 0 22px rgba(var(--chat-accent),.35);
+}
+
+</style>
+
+<!-- JARVIS_CRIMSON_COMPLETE_V3 -->
+
+<style>
+/* JARVIS_HIDE_TOP_RIGHT_CONTROLS_V1 */
+#toggle,
+#theme {
+    display: none !important;
+}
+</style>
+
+
+
+
+<style>
+#themeCycle{width:30px;height:30px;min-width:30px;padding:0;border-radius:50%;border:1px solid var(--accent);background:var(--panel);color:var(--accent);font-size:19px;line-height:1;cursor:pointer;box-shadow:0 0 10px color-mix(in srgb,var(--accent) 35%,transparent);transition:color .2s,border-color .2s,box-shadow .2s}
+#themeCycle:active{transform:scale(.92)}
+/* JARVIS_THEME_BUTTON_VISIBILITY_FIX */
+
+#themeCycle{
+ display:inline-flex!important;visibility:visible!important;opacity:1!important;
+ position:relative!important;z-index:9999!important;align-items:center!important;
+ justify-content:center!important;flex:0 0 30px!important;
+ width:30px!important;height:30px!important;min-height:30px!important;
+ margin:0 4px!important;pointer-events:auto!important;
+}
+
+</style>
+<style id="JARVIS_RED_THEME_WAVE_V1">
+body.jarvis-theme-wave #jarvisEnergyBurst {
+ border:1.5px solid rgba(255,38,58,.95)!important;
+ box-shadow:0 0 18px rgba(255,24,48,.85),
+ inset 0 0 16px rgba(255,35,55,.55)!important;
+ animation:jarvisSmoothWave 1.35s cubic-bezier(.16,.65,.3,1) forwards!important;
+}
+</style>
+
+</head>
+<body>
+<canvas id="orb"></canvas>
+<!-- JARVIS_DATA_CARDS_V1 -->
+
+<!-- JARVIS_BOTTOM_COMMAND_PANEL_V1 -->
+<section id="primeCommandPanel" aria-label="Command and permissions">
+ <h3><span>COMMAND CENTRE</span><span id="primeCommandSafety">LOCAL UI</span></h3>
+ <form id="primeCommandForm">
+  <input id="primeCommandInput" aria-label="Command input" placeholder="Enter command..." autocomplete="off">
+  <button type="submit">SEND</button>
+ </form>
+ <div id="primePermissionRow">
+  <button type="button" id="primeMicButton">ENABLE MIC</button>
+  <button type="button" id="primePermissionButton">PERMISSIONS</button>
+  <span id="primePermissionStatus" role="status">Mic: not requested · Commands: backend required</span>
+ </div>
+</section>
+
+<section id="primeCards" aria-label="JARVIS information panels">
+ <div class="prime-column">
+  <article class="prime-card" id="primeSystemCard">
+   <h3>SYSTEM <button type="button" data-expand>DETAILS</button></h3>
+   <div id="primeSystemData"></div>
+   <div class="prime-extra">Live values appear when supported by the browser or connected Android services.</div>
+  </article>
+  <article class="prime-card" id="primeAICard">
+   <h3>AI & VOICE <button type="button" data-expand>DETAILS</button></h3>
+   <div id="primeAIData"></div>
+   <div class="prime-extra">
+    <button type="button" id="primeUnloadInfo">MODEL CONTROL</button>
+    <p id="primeModelInfo" class="prime-muted">Requires local AI backend integration.</p>
+   </div>
+  </article>
+ </div>
+ <div class="prime-column">
+  <article class="prime-card" id="primeChatCard">
+   <h3>CHAT & COMMANDS <button type="button" data-expand>DETAILS</button></h3>
+   <div id="primeChatLog" aria-live="polite"></div>
+   <form id="primeChatForm">
+    <input id="primeChatInput" aria-label="Message" placeholder="Enter command..." autocomplete="off">
+    <button type="submit">SEND</button>
+   </form>
+   <div class="prime-extra prime-muted">Chat backend not connected.</div>
+  </article>
+  <article class="prime-card" id="primeTaskCard">
+   <h3>OPERATIONS <button type="button" data-expand>DETAILS</button></h3>
+   <div id="primeTaskData"></div>
+   <div class="prime-extra" id="primeTaskHistory"></div>
+  </article>
+ </div>
+</section>
+<header>
+<div class="brand">JARVIS PRIME</div>
+<div class="controls">
+<select id="theme" aria-hidden="true" tabindex="-1" style="display:none">
+<option value="arctic">ARCTIC</option>
+<option value="space">SPACE</option>
+<option value="minimal">MINIMAL</option>
+<option value="silver">CRIMSON PULSE</option>
+<option value="emerald">EMERALD</option>
+</select>
+<button id="themeCycle" type="button" aria-label="Change HUD colour" title="Change HUD colour">◉</button>
+<button id="toggle">CHAT</button>
+</div>
+</header>
+<section id="chat">
+<div id="messages"><div class="message">JARVIS PRIME READY</div></div>
+<div class="input">
+<input id="prompt" placeholder="Ask JARVIS PRIME...">
+<button id="send">SEND</button>
+</div>
+</section>
+<div id="status">HUD ONLINE · AI CONNECTION PENDING</div>
+<script>
+const c=document.getElementById("orb");
+const x=c.getContext("2d",{alpha:false});
+
+const themes={
+arctic:["#06131e","#9deaff","#e6faff","#102b3ccc"],
+space:["#03020e","#a98cff","#eee6ff","#201040cc"],
+minimal:["#080808","#ffffff","#ffffff","#252525dd"],
+silver:["#120716","#ff426a","#ffe0ed","#351025dd"],
+emerald:["#02150e","#48ffb1","#e2fff2","#083d2acc"]
+};
+const orbPalettes={
+ arctic:["#ff2330","#4be7ff"],
+ space:["#ff4fbd","#a98cff"],
+ minimal:["#777777","#ffffff"],
+ silver:["#d64dff","#ff426a"],
+ emerald:["#ffad42","#48ffb1"]
+};
+let activeTheme="arctic";
+let accent="#9deaff";
+let zoom=1,rx=.25,ry=.3;
+let w=0,h=0;
+let expansion=0;
+let lastFrame=0;
+let pointerX=0,pointerY=0;
+let dragging=false;
+let lastDistance=0,lastTap=0;
+
+function themeSet(name){
+ const t=themes[name];
+ ["--bg","--accent","--text","--panel"].forEach(
+ (k,i)=>document.documentElement.style.setProperty(k,t[i])
+ );
+ accent=t[1];
+ activeTheme=name;
+}
+
+const themeControl=document.getElementById("theme");
+const themeCycle=document.getElementById("themeCycle");
+themeCycle.addEventListener("click",()=>{
+ const names=Array.from(themeControl.options).map(o=>o.value);
+ themeControl.value=names[(names.indexOf(themeControl.value)+1)%names.length];
+ themeControl.dispatchEvent(new Event("change"));
+});
+
+themeCycle.addEventListener("click",()=>{
+ const wave=document.getElementById("jarvisEnergyBurst");
+ if(!wave)return;
+ document.body.classList.remove("jarvis-theme-wave");
+ void document.body.offsetWidth;
+ document.body.classList.add("jarvis-theme-wave");
+ clearTimeout(window.jarvisThemeWaveTimer);
+ window.jarvisThemeWaveTimer=setTimeout(
+  ()=>document.body.classList.remove("jarvis-theme-wave"),1400
+ );
+});
+
+themeControl.onchange=e=>{
+ themeSet(e.target.value);
+ themeCycle.style.color=themes[e.target.value][1];
+ themeCycle.style.borderColor=themes[e.target.value][1];
+ themeCycle.title="HUD colour: "+e.target.options[e.target.selectedIndex].text+" — tap to change";
+};
+
+
+function resize(){
+ const d=Math.min(devicePixelRatio||1,1.25);
+ w=innerWidth;
+ h=innerHeight;
+ c.width=Math.round(w*d);
+ c.height=Math.round(h*d);
+ x.setTransform(d,0,0,d,0,0);
+}
+addEventListener("resize",resize);
+resize();
+
+function rotate3D(px,py,pz,ax,ay){
+ const cy=Math.cos(ay),sy=Math.sin(ay);
+ const cx=Math.cos(ax),sx=Math.sin(ax);
+
+ const xx=px*cy+pz*sy;
+ const zz=-px*sy+pz*cy;
+
+ return [
+ xx,
+ py*cx-zz*sx,
+ py*sx+zz*cx
+ ];
+}
+
+function project(p,r){
+ const depth=3.8;
+ const perspective=depth/(depth-p[2]*.3);
+ return [p[0]*r*perspective,p[1]*r*perspective,p[2]];
+}
+
+
+
+
+
+
+let manualRotX=0,manualRotY=0,rotVelX=0,rotVelY=0,lastRotFrame=0;
+let bgRotX=0,bgRotY=0;
+let jarvis2D=false;
+let jarvisBlend=0;
+let jarvisZoomStart=1;
+let jarvisZoomTarget=1;
+// JARVIS_SMOOTH_SHRINK_V1
+let jarvisTransitionTime=0;
+// JARVIS_LONG_PRESS_ORB_TRANSITION_V1
+let jarvisThemeTransitionStart=0,jarvisThemeTransitionSwap=null,jarvisThemeSwapped=false;
+window.jarvisStartThemeTransition=callback=>{
+ if(jarvisThemeTransitionStart)return;
+ jarvisThemeTransitionStart=performance.now();
+ jarvisThemeTransitionSwap=callback;
+ jarvisThemeSwapped=false;
+};
+// JARVIS_TRANSITION_V1 // JARVIS_2D_MODE_V2
+// JARVIS_STATIC_MESH_V1
+function draw(ms) {
+ const t=ms*.001,W=w,H=h,TAU=Math.PI*2;
+ let themeOrbScale=1,themeOrbAlpha=1;
+ if(jarvisThemeTransitionStart){
+  const elapsed=ms-jarvisThemeTransitionStart;
+  if(elapsed<460){
+   const u=Math.max(0,elapsed/460),e=1-Math.pow(1-u,3);
+   themeOrbScale=1-.94*e;themeOrbAlpha=1-.82*e;
+  }else if(elapsed<650){
+   themeOrbScale=.06;themeOrbAlpha=.18;
+  }else if(elapsed<1250){
+   const u=Math.min(1,(elapsed-650)/600),e=u*u*(3-2*u);
+   themeOrbScale=.06+.94*e;themeOrbAlpha=.18+.82*e;
+  }else{
+   jarvisThemeTransitionStart=0;
+   jarvisThemeTransitionSwap=null;
+  }
+  if(elapsed>=520&&!jarvisThemeSwapped){
+   jarvisThemeSwapped=true;
+   if(jarvisThemeTransitionSwap)jarvisThemeTransitionSwap();
+  }
+ }
+ const targetBlend=jarvis2D?1:0;
+ const blendStep=Math.min(1,Math.max(0,(ms-jarvisTransitionTime)/1400));
+ const eased=blendStep*blendStep*(3-2*blendStep);
+ if(jarvisTransitionTime>0){
+   jarvisBlend=jarvis2D?eased:1-eased;
+ }
+ const dt=lastRotFrame?Math.min(.05,Math.max(0,(ms-lastRotFrame)/1000)):0;
+ lastRotFrame=ms;
+ if(dt>0&&!jarvis2D){
+  manualRotX+=rotVelX*dt;
+  manualRotY+=rotVelY*dt;
+  const damping=Math.exp(-2.8*dt);
+  rotVelX*=damping;rotVelY*=damping;
+  if(Math.abs(rotVelX)<.008)rotVelX=0;
+  if(Math.abs(rotVelY)<.008)rotVelY=0;
+ }
+
+ // JARVIS_2D_ZOOM_LIMIT_V1
+ // Limit zoom globally when the 2D dial is active.
+ // The dial radius is 20% of the smaller screen dimension.
+ const dialZoomLimit=.18/(.235*.88);
+ if(jarvis2D && jarvisTransitionTime>0){
+   const progress=Math.min(1,Math.max(0,
+     (ms-jarvisTransitionTime)/1400
+   ));
+   const smooth=progress*progress*(3-2*progress);
+   zoom=jarvisZoomStart+
+        (jarvisZoomTarget-jarvisZoomStart)*smooth;
+ }else if(jarvis2D){
+   zoom=Math.min(zoom,dialZoomLimit);
+ }
+ const cx=W*.5,cy=H*.46,Z=Math.max(.3,Math.min(zoom,4));
+ const colorZoom=jarvis2D
+  ?Math.max(0.3,Math.min(4,zoom))
+  :Z;
+ const mix=Math.max(0,Math.min(1,
+  Math.log(colorZoom/0.3)/Math.log(1.8)));
+ // JARVIS_THEME_COLOUR_DRAIN_BURST_V1
+ let themeBurst=0,themeDrain=0;
+ if(jarvisThemeTransitionStart){
+  const elapsed=ms-jarvisThemeTransitionStart;
+  if(elapsed<460)themeDrain=Math.min(1,elapsed/460);
+  else if(elapsed<650)themeDrain=1;
+  else if(elapsed<1250)themeBurst=1-Math.min(1,(elapsed-650)/600);
+ }
+ const palette=orbPalettes[activeTheme]||orbPalettes.arctic;
+ const start=palette[0].match(/[0-9a-f]{2}/ig).map(v=>parseInt(v,16));
+ const end=palette[1].match(/[0-9a-f]{2}/ig).map(v=>parseInt(v,16));
+ const color="#"+start.map((v,i)=>Math.round(v+(end[i]-v)*mix).toString(16).padStart(2,"0")).join("");
+ const baseR=Math.min(W,H)*.235*Math.min(Z,2.5);
+ const maxR=Math.max(1,Math.min(W*.5,H*.46,H*.54)/1.22);
+ const R=Math.min(baseR,maxR);
+ const pulse=1;
+ x.clearRect(0,0,W,H);
+ const themeBg=themes[activeTheme][0];
+ x.fillStyle=themeBg;x.fillRect(0,0,W,H);
+
+ // Animated theme colour is drawn over the existing background only.
+ const oldPalette=jarvisThemeTransitionStart
+  ? (orbPalettes[window.jarvisPreviousTheme]||palette) : palette;
+ if(jarvisThemeTransitionStart && themeDrain>0 && themeBurst===0){
+  const oldColor=oldPalette[1]||color;
+  const g=x.createRadialGradient(cx,cy,1,cx,cy,Math.max(W,H)*(.08+.7*themeDrain));
+  g.addColorStop(0,oldColor+"00");
+  g.addColorStop(.48,oldColor+Math.round(65*(1-themeDrain)).toString(16).padStart(2,"0"));
+  g.addColorStop(1,themeBg+"00");
+  x.fillStyle=g;x.fillRect(0,0,W,H);
+ }
+ if(jarvisThemeTransitionStart && ms-jarvisThemeTransitionStart>=650 && ms-jarvisThemeTransitionStart<1250){
+  const p=Math.min(1,(ms-jarvisThemeTransitionStart-650)/600);
+  const radius=Math.max(W,H)*(.04+p*.8);
+  const burst=x.createRadialGradient(cx,cy,Math.max(1,radius*.08),cx,cy,radius);
+  burst.addColorStop(0,color+"00");
+  burst.addColorStop(.25,color+Math.round(100*(1-p)).toString(16).padStart(2,"0"));
+  burst.addColorStop(1,color+"00");
+  x.fillStyle=burst;x.fillRect(0,0,W,H);
+ }
+
+ const bg=x.createRadialGradient(cx,cy,1,cx,cy,Math.max(W,H)*.62);
+ bg.addColorStop(0,color+"24");bg.addColorStop(1,themeBg);
+ x.fillStyle=bg;x.fillRect(0,0,W,H);
+
+ // JARVIS_2D_BG_DARKEN_V1
+ // Smoothly darken background in 2D mode.
+ x.save();
+ x.globalAlpha=jarvisBlend*.75;
+ x.fillStyle="#000000";
+ x.fillRect(0,0,W,H);
+ x.restore();
+
+ // Zoom-reactive futuristic background.
+ x.save();
+ const zoomDepth=Math.max(.65,Math.min(1.65,1+(Z-1)*.22));
+ const techFade=1/(1+Math.abs(Z-1)*.32);
+
+ // Ambient glow reacts subtly to zoom.
+ const haze=x.createRadialGradient(cx,cy,R*.1,cx,cy,Math.max(W,H)*.72);
+ haze.addColorStop(0,color+"20");
+ haze.addColorStop(.45,color+"0a");
+ haze.addColorStop(1,"#00000000");
+ x.fillStyle=haze;x.fillRect(0,0,W,H);
+
+ // Grid shifts scale gently to create depth.
+ const spacing=Math.max(28,Math.min(W,H)*.065*zoomDepth);
+ bgRotY+=((dragging||Math.abs(rotVelY)>.02)?rotVelY*.5:.10)*Math.min(.05,Math.max(0,dt||.016));
+ const offsetX=((bgRotY*Math.min(W,H)*.12)%spacing+spacing)%spacing;
+ bgRotX+=((dragging||Math.abs(rotVelX)>.02)?rotVelX*.5:.07)*Math.min(.05,Math.max(0,dt||.016));
+ const offsetY=((bgRotX*Math.min(W,H)*.12)%spacing+spacing)%spacing;
+ x.strokeStyle=color;x.lineWidth=.65;
+ x.globalAlpha=.15*techFade;
+ for(let gx=-spacing;gx<W+spacing;gx+=spacing){
+  x.beginPath();x.moveTo(gx+offsetX,0);x.lineTo(gx+offsetX,H);x.stroke();
+ }
+ for(let gy=-spacing;gy<H+spacing;gy+=spacing){
+  x.beginPath();x.moveTo(0,gy+offsetY);x.lineTo(W,gy+offsetY);x.stroke();
+ }
+
+ // Edge circuitry scales and fades with zoom.
+ x.globalAlpha=.32*techFade;x.strokeStyle=color;x.lineWidth=1;
+ const edge=(left)=>{
+  const sx=left?16:W-16,dir=left?1:-1;
+  for(let n=0;n<6;n++){
+   const sy=H*(.16+n*.125);
+   const len=Math.min(W*.16,85+n*5)*zoomDepth;
+   x.beginPath();x.moveTo(sx,sy);
+   x.lineTo(sx+dir*10,sy);
+   x.lineTo(sx+dir*10,sy+15*zoomDepth);
+   x.lineTo(sx+dir*len,sy+15*zoomDepth);x.stroke();
+   x.beginPath();x.arc(sx+dir*len,sy+15*zoomDepth,1.8,0,TAU);x.stroke();
+  }
+ };
+ edge(true);edge(false);
+
+ // Corner brackets respond to zoom.
+ x.globalAlpha=.65*techFade;x.lineWidth=1.3;
+ const c=Math.min(W,H)*.052*zoomDepth,pad=14;
+ for(const [px,py,dx,dy] of [
+  [pad,pad,1,1],[W-pad,pad,-1,1],
+  [pad,H-pad,1,-1],[W-pad,H-pad,-1,-1]
+ ]){
+  x.beginPath();x.moveTo(px,py+dy*c);x.lineTo(px,py);
+  x.lineTo(px+dx*c,py);x.stroke();
+ }
+
+ // Small technical hexagons fade gently at extreme zoom.
+ for(let n=0;n<8;n++){
+  const px=n%2===0?W*.12+n*3:W*.88-n*3;
+  const py=H*(.22+n*.075);
+  const r=(5+(n%3)*2)*zoomDepth;
+  x.globalAlpha=(.22+(n%3)*.07)*techFade;
+  x.beginPath();
+  for(let k=0;k<=6;k++){
+   const ang=k*TAU/6,xx=px+Math.cos(ang)*r,yy=py+Math.sin(ang)*r;
+   if(k===0)x.moveTo(xx,yy);else x.lineTo(xx,yy);
+  }
+  x.stroke();
+ }
+
+
+ // JARVIS_BG_DETAIL_LAYER_V1: layered futuristic animated background.
+ x.save();
+ x.globalAlpha=.24*techFade;
+ x.strokeStyle=color;
+ x.lineWidth=.7;
+
+ // Large concentric technical scanning circles at screen edges.
+ for(let side=0;side<2;side++){
+   const ox=side?W*.91:W*.09, oy=H*.5;
+   for(let k=0;k<4;k++){
+     const rr=Math.min(W,H)*(.075+k*.027);
+     x.beginPath();
+     x.arc(ox,oy,rr,t*(side?-.055:.055)+k*.22,
+       t*(side?-.055:.055)+k*.22+Math.PI*(1.05+k*.18));
+     x.stroke();
+   }
+   // Segmented instrument ticks.
+   for(let k=0;k<36;k++){
+     const a=k*Math.PI*2/36+t*.025*(side?-1:1);
+     const r1=Math.min(W,H)*.145;
+     const r2=r1+(k%3===0?8:3);
+     x.beginPath();
+     x.moveTo(ox+Math.cos(a)*r1,oy+Math.sin(a)*r1);
+     x.lineTo(ox+Math.cos(a)*r2,oy+Math.sin(a)*r2);
+     x.stroke();
+   }
+ }
+
+ // Slow-moving diagonal energy traces.
+ x.globalAlpha=.12*techFade;
+ for(let k=0;k<12;k++){
+   const y=((k*H/12+t*(8+k%3*3))%(H+50))-25;
+   const x0=(k%2)*W;
+   const x1=W-x0;
+   x.beginPath();
+   x.moveTo(x0,y);
+   x.lineTo(W*.5+(k%3-1)*W*.12,y- H*.045);
+   x.lineTo(x1,y-H*.09);
+   x.stroke();
+ }
+
+ // Tiny illuminated data nodes and connecting lines.
+ for(let k=0;k<18;k++){
+   const px=((k*137.5+t*(k%2?4:-4))%(W+40))-20;
+   const py=((k*83.7+H*.13)%(H*.82))+H*.09;
+   const rr=k%4===0?2.1:1.1;
+   x.globalAlpha=(k%4===0?.48:.22)*techFade;
+   x.beginPath();
+   x.arc(px,py,rr,0,TAU);
+   x.fillStyle=k%5===0?"#ffd18a":color;
+   x.fill();
+   if(k%3===0){
+     x.globalAlpha=.13*techFade;
+     x.beginPath();
+     x.moveTo(px,py);
+     x.lineTo(px+(k%2?1:-1)*W*.045,py-H*.018);
+     x.stroke();
+   }
+ }
+
+ // Subtle corner micro-circuit panels.
+ x.globalAlpha=.22*techFade;
+ for(let side=0;side<4;side++){
+   const px=side%2?W-25:25;
+   const py=side<2?H*.28:H*.72;
+   const dir=side%2?-1:1;
+   x.beginPath();
+   x.moveTo(px,py);
+   x.lineTo(px+dir*18,py);
+   x.lineTo(px+dir*18,py+14);
+   x.lineTo(px+dir*42,py+14);
+   x.stroke();
+   x.beginPath();
+   x.arc(px+dir*42,py+14,1.7,0,TAU);
+   x.stroke();
+ }
+
+ x.restore();
+
+
+ // JARVIS_BG_DETAIL_LAYER_V2: advanced HUD instrumentation.
+ x.save();
+ x.lineWidth=.7;
+
+ // Rotating radar sweeps in the screen corners.
+ for(let side=0;side<4;side++){
+   const ox=side%2?W-32:32;
+   const oy=side<2?H*.16:H*.84;
+   const rr=Math.min(W,H)*.105;
+   const a=t*(side%2?-.22:.22)+side*1.7;
+   x.strokeStyle=color;
+   x.globalAlpha=.12*techFade;
+   x.beginPath();x.arc(ox,oy,rr,0,TAU);x.stroke();
+   x.beginPath();x.arc(ox,oy,rr*.68,0,TAU);x.stroke();
+   x.globalAlpha=.22*techFade;
+   x.beginPath();x.moveTo(ox,oy);
+   x.lineTo(ox+Math.cos(a)*rr,oy+Math.sin(a)*rr);
+   x.stroke();
+   x.globalAlpha=.09*techFade;
+   x.beginPath();x.moveTo(ox,oy);
+   x.arc(ox,oy,rr,a-.35,a);x.closePath();x.fillStyle=color;x.fill();
+ }
+
+ // Distributed hexagonal circuitry.
+ for(let n=0;n<16;n++){
+   const col=n%4,row=Math.floor(n/4);
+   const px=W*(.12+col*.255)+(row%2)*W*.035;
+   const py=H*(.12+row*.255)+Math.sin(t*.22+n)*3;
+   const r=Math.min(W,H)*(.012+(n%3)*.003);
+   const pulse=.5+.5*Math.sin(t*1.1+n*1.8);
+   x.globalAlpha=(.12+pulse*.12)*techFade;
+   x.strokeStyle=n%5===0?"#ffd18a":color;
+   x.beginPath();
+   for(let k=0;k<=6;k++){
+     const a=k*TAU/6;
+     const xx=px+Math.cos(a)*r,yy=py+Math.sin(a)*r;
+     if(k===0)x.moveTo(xx,yy);else x.lineTo(xx,yy);
+   }
+   x.stroke();
+   if(n%2===0){
+     x.globalAlpha=.11*techFade;
+     x.beginPath();x.moveTo(px+r,py);
+     x.lineTo(px+r*1.8,py);
+     x.lineTo(px+r*2.1,py+r*.5);
+     x.stroke();
+   }
+ }
+
+ // Horizontal data readout bars and animated scan pulses.
+ for(let side=0;side<2;side++){
+   const bx=side?W*.72:W*.07;
+   const by=H*(.38+side*.24);
+   for(let n=0;n<9;n++){
+     const yy=by+n*7;
+     const len=10+((n*17+side*11)%37);
+     x.globalAlpha=(n%3===0?.3:.12)*techFade;
+     x.strokeStyle=n%4===0?"#ffd18a":color;
+     x.beginPath();x.moveTo(bx,yy);x.lineTo(bx+len,yy);x.stroke();
+   }
+   const scan=bx+((t*18)%48);
+   x.globalAlpha=.5*techFade;
+   x.fillStyle=color;
+   x.fillRect(scan,by-4,1.5,65);
+ }
+
+ // Fine orbital arcs behind the main blob.
+ x.translate(W*.5,H*.46);
+ x.rotate(t*.012);
+ for(let n=0;n<5;n++){
+   x.globalAlpha=(.045+n*.012)*techFade;
+   x.strokeStyle=n%2?"#8edfff":color;
+   x.beginPath();
+   x.ellipse(0,0,Math.min(W,H)*(.30+n*.045),
+     Math.min(W,H)*(.18+n*.032),n*.31,0,TAU);
+   x.stroke();
+ }
+ x.restore();
+
+ // Small floating particles orbiting and reacting to zoom.
+ const zoomPush=(Z-1)*.42;
+ const particleCount=Math.max(24,Math.min(120,Math.round(72/Math.max(.45,R/(Math.min(W,H)*.235)))));
+ for(let n=0;n<particleCount;n++){
+  const seedA=n*2.3999632297;
+  const baseR=Math.min(W,H)*(.17+(n%13)*.012);
+  const drift=t*(.10+(n%7)*.018)*(n%2?1:-1);
+  const angle=seedA+drift+manualRotY*.08;
+  const radius=baseR*(1+zoomPush);
+  const px=cx+Math.cos(angle)*radius;
+  const py=cy+Math.sin(angle)*radius*.82+
+           Math.sin(t*.45+n*1.7)*3;
+  if(px<0||px>W||py<0||py>H)continue;
+  const size=.65+(n%4)*.28;
+  const alpha=Math.max(.08,Math.min(.65,.28+(Z-1)*.12));
+  x.globalAlpha=alpha;
+  x.fillStyle=n%6===0?"#ffffff":color;
+  x.shadowColor=color;x.shadowBlur=n%6===0?7:3;
+  x.beginPath();x.arc(px,py,size,0,TAU);x.fill();
+ }
+ x.shadowBlur=0;x.globalAlpha=1;
+
+ // A thin scanning line moves slowly through the background.
+ x.globalAlpha=.07*techFade;x.lineWidth=1;
+ const scanY=((t*15)%H);
+ x.beginPath();x.moveTo(0,scanY);x.lineTo(W,scanY);x.stroke();
+ x.restore();
+
+ function project(a,b,d,ax,ay){
+  ax+=manualRotX;ay+=manualRotY;
+  const xx=a*Math.cos(ay)-d*Math.sin(ay);
+  const zz=a*Math.sin(ay)+d*Math.cos(ay);
+  const yy=b*Math.cos(ax)-zz*Math.sin(ax);
+  const z2=b*Math.sin(ax)+zz*Math.cos(ax);
+  const k=3.5/(3.5+z2/Math.max(R,1));
+  return [cx+xx*k,cy+yy*k,z2];
+ }
+ function path(pts,col,width,alpha,blur=0){
+  if(pts.length<2)return;
+  x.save();x.strokeStyle=col;x.lineWidth=width;x.globalAlpha=alpha;
+  x.shadowColor=col;x.shadowBlur=blur;x.beginPath();
+  pts.forEach((p,i)=>i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]));
+  x.stroke();x.restore();
+ }
+ function ring3D(radius,ax,ay,col,alpha,width=1){
+  const pts=[];
+  for(let j=0;j<=180;j++){
+   const a=j/180*TAU;
+   pts.push(project(Math.cos(a)*radius,
+                    Math.sin(a)*radius,0,ax,ay));
+  }
+  path(pts,col,width,alpha,5);
+ }
+
+
+
+ // JARVIS_SMOOTH_RING_MORPH_V2
+ // Shared morphing rings remain visible in both modes.
+ {
+   const morph=jarvisBlend;
+   const flatR=Math.min(W,H)*.18;
+
+   const morphRing=(r3,r2,ax,ay,col,alpha,width)=>{
+     const r=r3+(r2-r3)*morph;
+     const pts=[];
+
+     for(let j=0;j<=180;j++){
+       const a=j/180*TAU;
+
+       const px=Math.cos(a)*r;
+       const py=Math.sin(a)*r;
+
+       const p3=project(px,py,0,ax,ay);
+       const p2=[cx+px,cy+py];
+
+       pts.push([
+         p3[0]*(1-morph)+p2[0]*morph,
+         p3[1]*(1-morph)+p2[1]*morph
+       ]);
+     }
+
+     path(pts,col,width,alpha,2);
+   };
+
+   morphRing(
+     R*.96,flatR*.94,
+     .12+t*.38,.2+t*.52,
+     color,.8,1.4
+   );
+
+   morphRing(
+     R*1.08,flatR*.76,
+     1.02-t*.32,.72-t*.28,
+     "#8edfff",.7,1.2
+   );
+
+   morphRing(
+     R*1.16,flatR*.58,
+     -.83+t*.24,-.48-t*.30,
+     "#ffd18a",.65,1.1
+   );
+ }
+
+ // Organized 2D reactor interface.
+ if(jarvisBlend>0){
+   const rr=Math.min(W,H)*.18;
+   x.save();
+   x.globalAlpha=jarvisBlend;
+   // Dial emerges from and collapses into the exact nucleus center.
+   const dialScale=Math.max(.001,jarvisBlend);
+   x.translate(cx,cy);
+   x.scale(dialScale,dialScale);
+   x.translate(-cx,-cy);
+   x.save();
+   x.translate(cx,cy);
+   x.shadowBlur=0;
+
+   // Concentric reactor rings.
+   for(let k=0;k<6;k++){
+     const radius=rr*(1.08-k*.14);
+     x.globalAlpha=.75-k*.08;
+     x.strokeStyle=color;
+     x.lineWidth=k===0?2:1;
+     x.beginPath();
+     x.arc(0,0,radius,0,TAU);
+     x.stroke();
+   }
+
+   // Precision radial ticks.
+   for(let k=0;k<60;k++){
+     const a=k*TAU/60;
+     const inner=rr*(k%5===0?.89:.98);
+     const outer=rr*1.07;
+     x.globalAlpha=k%5===0?.85:.35;
+     x.lineWidth=k%5===0?1.5:.7;
+     x.beginPath();
+     x.moveTo(Math.cos(a)*inner,Math.sin(a)*inner);
+     x.lineTo(Math.cos(a)*outer,Math.sin(a)*outer);
+     x.stroke();
+   }
+
+   // Symmetrical geometric reactor.
+   for(let k=0;k<3;k++){
+     const radius=rr*(.68-k*.16);
+     x.globalAlpha=.65;
+     x.lineWidth=1.2;
+     x.beginPath();
+     for(let j=0;j<=6;j++){
+       const a=j*TAU/6-Math.PI/2;
+       const px=Math.cos(a)*radius;
+       const py=Math.sin(a)*radius;
+       if(j===0)x.moveTo(px,py);
+       else x.lineTo(px,py);
+     }
+     x.stroke();
+   }
+
+   // Central illuminated nucleus.
+   const nr=rr*.18;
+   const glow=x.createRadialGradient(
+     -nr*.25,-nr*.25,1,0,0,nr
+   );
+   glow.addColorStop(0,"#ffffff");
+   glow.addColorStop(.25,"#eaffff");
+   glow.addColorStop(.6,color);
+   glow.addColorStop(1,color+"55");
+
+   x.globalAlpha=1;
+   x.fillStyle=glow;
+   x.beginPath();
+   x.arc(0,0,nr,0,TAU);
+   x.fill();
+
+   // Central energy point.
+   x.fillStyle="#ffffff";
+   x.beginPath();
+   x.arc(0,0,nr*.12,0,TAU);
+   x.fill();
+
+   // Four symmetrical axis markers.
+   x.strokeStyle=color;
+   x.lineWidth=1.4;
+   x.globalAlpha=.85;
+
+   for(let k=0;k<4;k++){
+     const a=k*Math.PI/2;
+     x.beginPath();
+     x.moveTo(Math.cos(a)*rr*.75,
+              Math.sin(a)*rr*.75);
+     x.lineTo(Math.cos(a)*rr*.86,
+              Math.sin(a)*rr*.86);
+     x.stroke();
+   }
+
+   x.restore();
+   x.restore();
+ }
+ // Keep the 3D mesh unchanged during ring transitions.
+ x.save();
+ x.globalAlpha=1;
+ // JARVIS_ORB_RINGS_SPIN_SHRINK_V2
+ x.save();
+ x.translate(cx,cy);
+ x.rotate(Math.min(1,Math.max(0,(ms-jarvisThemeTransitionStart)/460))*Math.PI*5);
+ x.scale(themeOrbScale,themeOrbScale);
+ x.translate(-cx,-cy);
+ x.globalAlpha*=themeOrbAlpha;
+
+ // JARVIS_MESH_TRANSITION_SPIN_V1
+ const meshSpin=jarvis2D
+   ? Math.sin(jarvisBlend*Math.PI)*8
+   : 0;
+ // Transparent spherical reactor shell: latitude and longitude lines.
+ // JARVIS_SMOOTH_MESH_SHRINK_V1
+ const naturalMeshR=R*.88*pulse;
+ const dialMeshR=Math.min(W,H)*.18;
+ const meshBlend=jarvisBlend*jarvisBlend*(3-2*jarvisBlend);
+ const sphereR=naturalMeshR+
+   (Math.min(naturalMeshR,dialMeshR)-naturalMeshR)*meshBlend;
+ const coreR=Math.min(W,H)*.058;
+ for(let i=-2;i<=2;i++){
+  const lat=i*.42, rr=sphereR*Math.cos(lat);
+  const pts=[];
+  for(let j=0;j<=160;j++){
+   const a=j/160*TAU;
+   pts.push(project(rr*Math.cos(a),sphereR*Math.sin(lat),rr*Math.sin(a),
+                    .18+(jarvis2D?meshSpin:t*.32),.25-(jarvis2D?meshSpin*.8:t*.24)));
+  }
+  path(pts,color,.85,.20+Math.abs(i)*.055,3);
+ }
+ // JARVIS_COORDINATED_3D_RINGS_V1
+ const ringClock=t*.34;
+ for(let i=0;i<4;i++){
+  const ay=(jarvis2D?meshSpin:ringClock)*(i%2?-.82:1.0)+i*Math.PI/4;
+  const pts=[];
+  for(let j=0;j<=180;j++){
+   const a=j/180*TAU;
+   pts.push(project(sphereR*Math.cos(a),sphereR*Math.sin(a),0,
+                    .25+i*.27,ay));
+  }
+  path(pts,i%2?"#a9caff":color,1.1,.48,6);
+ }
+
+
+ // Smooth, uniform spherical body without blurry light exposure.
+ x.save();
+ x.globalAlpha=1;
+ x.fillStyle=color+"20";
+ x.beginPath();x.arc(cx,cy,sphereR,0,TAU);x.fill();
+ x.strokeStyle=color;x.lineWidth=1.15;
+ x.globalAlpha=.85;
+ x.beginPath();x.arc(cx,cy,sphereR,0,TAU);x.stroke();
+ x.restore();
+
+ // Central illuminated orb with restrained radiance.
+
+ // JARVIS_VOICE_REACTIVE_ORB_V1
+ {
+  const input=Math.max(0,Math.min(1,window.jarvisVoiceInputLevel||0));
+  const output=Math.max(0,Math.min(1,window.jarvisVoiceOutputLevel||0));
+  const listening=!!window.jarvisVoiceListening;
+  const speaking=!!window.jarvisVoiceSpeaking;
+  const energy=Math.max(input,output,listening?.12:0,speaking?.18:0);
+  if(energy>.005){
+   x.save();
+   const pulse=1+.055*Math.sin(t*5)*(listening?1:0)+energy*.13;
+   const radius=coreR*(1.95+energy*.45)*pulse;
+   const glow=x.createRadialGradient(cx,cy,coreR*.65,cx,cy,radius);
+   glow.addColorStop(0,color+"00");
+   glow.addColorStop(.55,color+"12");
+   glow.addColorStop(.82,listening?"#53eaff55":"#a9d9ff44");
+   glow.addColorStop(1,color+"00");
+   x.globalAlpha=.35+energy*.45;
+   x.fillStyle=glow;
+   x.beginPath();x.arc(cx,cy,radius,0,TAU);x.fill();
+   x.strokeStyle=listening?"#65efff":speaking?"#d4b5ff":color;
+   x.globalAlpha=.4+energy*.5;
+   x.lineWidth=1+energy*2;
+   x.beginPath();
+   x.arc(cx,cy,coreR*(1.9+energy*.3),t*(speaking?-.8:.45),t*(speaking?-.8:.45)+Math.PI*(1.1+energy));
+   x.stroke();
+   x.restore();
+  }
+ }
+
+ // Refined low-emission core with crisp precision geometry.
+ x.save();
+ x.globalAlpha=.92;
+ x.shadowBlur=0;
+ x.lineWidth=1;
+ x.strokeStyle=color;
+ x.beginPath();x.arc(cx,cy,coreR*1.72,0,TAU);x.stroke();
+ x.globalAlpha=.48;
+ x.beginPath();x.arc(cx,cy,coreR*1.42,0,TAU);x.stroke();
+ x.globalAlpha=.72;
+ for(let i=0;i<24;i++){
+   const a=i*TAU/24+t*.035;
+   const r1=coreR*1.52,r2=coreR*(i%3===0?1.82:1.68);
+   x.beginPath();
+   x.moveTo(cx+Math.cos(a)*r1,cy+Math.sin(a)*r1);
+   x.lineTo(cx+Math.cos(a)*r2,cy+Math.sin(a)*r2);
+   x.stroke();
+ }
+ // Restored inner core orb: clearly defined, smooth and softly illuminated.
+ const cg=x.createRadialGradient(cx-coreR*.25,cy-coreR*.28,coreR*.03,cx,cy,coreR);
+ cg.addColorStop(0,"#ffffff");
+ cg.addColorStop(.18,color);
+ cg.addColorStop(.62,color+"cc");
+ cg.addColorStop(1,color+"88");
+ x.globalAlpha=.78;
+ x.fillStyle=cg;
+ x.shadowBlur=0;
+ x.beginPath();x.arc(cx,cy,coreR,0,TAU);x.fill();
+ x.globalAlpha=.68;
+ x.strokeStyle=color;
+ x.lineWidth=Math.max(.8,coreR*.045);
+ x.beginPath();x.arc(cx,cy,coreR*.94,0,TAU);x.stroke();
+ x.globalAlpha=.9;
+ x.strokeStyle="#ffffff";
+ x.lineWidth=Math.max(.7,coreR*.035);
+ x.beginPath();x.arc(cx,cy,coreR*.78,-.85,1.25);x.stroke();
+ x.globalAlpha=.6;
+ x.strokeStyle=color;
+ x.beginPath();x.arc(cx,cy,coreR*.56,1.8,4.7);x.stroke();
+ x.globalAlpha=.95;
+ x.fillStyle="#ffffff";
+ x.beginPath();x.arc(cx,cy,Math.max(.8,coreR*.12),0,TAU);x.fill();
+
+
+
+ // Bright inner reactor rings.
+ const reactorClock=t*.72;
+ for(let i=0;i<3;i++){
+  x.save();x.translate(cx,cy);
+  x.rotate(reactorClock*(i===1?-.72:i===2?1.18:1));
+  x.strokeStyle=color;x.lineWidth=i===1?1.6:1;
+  x.globalAlpha=.9-i*.16;x.shadowColor=color;x.shadowBlur=0;
+  x.beginPath();x.ellipse(0,0,coreR*(.42+i*.19),coreR*(.23+i*.10),i*.8,0,TAU);
+  x.stroke();x.restore();
+ }
+ // Pulsing central energy point.
+ const spark=coreR*(.018+.006*Math.sin(t*3));
+ x.save();x.fillStyle=color;x.shadowColor=color;x.shadowBlur=0;
+ x.beginPath();x.arc(cx,cy,spark,0,TAU);x.fill();x.restore();
+
+ // Precision aperture ticks around the energy core.
+ x.save();x.translate(cx,cy);x.rotate(reactorClock*.24);
+ x.strokeStyle=color;x.lineWidth=.8;x.globalAlpha=.72;
+ for(let i=0;i<48;i++){
+  const a=i/48*TAU,r=coreR*1.43;
+  const outer=coreR*(i%4===0?1.85:1.62);
+  x.beginPath();x.moveTo(Math.cos(a)*r,Math.sin(a)*r);
+  x.lineTo(Math.cos(a)*outer,Math.sin(a)*outer);x.stroke();
+ }
+ x.restore();
+ // Fine rotating energy filaments.
+ x.save();x.strokeStyle="#ffffff";x.lineWidth=.7;x.globalAlpha=.58;
+ for(let i=0;i<3;i++){
+  const a=reactorClock*(i%2?-.34:.48)+i*TAU/3;
+  x.beginPath();x.ellipse(cx,cy,coreR*(.45+i*.13),
+    coreR*(.18+i*.035),a,0,TAU);x.stroke();
+ }
+ x.restore();
+
+ // Visible luminous nucleus layered above the existing core details.
+ x.save();
+ x.translate(cx,cy);
+ x.rotate(t*.65);
+ x.translate(-cx,-cy);
+ const nr=coreR*.48;
+ const halo=x.createRadialGradient(cx,cy,nr*.25,cx,cy,nr*1.65);
+ halo.addColorStop(0,color+"55");
+ halo.addColorStop(.55,color+"20");
+ halo.addColorStop(1,color+"00");
+ x.globalAlpha=.9;
+ x.fillStyle=halo;
+ x.beginPath();x.arc(cx,cy,nr*1.65,0,TAU);x.fill();
+
+ const ng=x.createRadialGradient(
+   cx-nr*.3,cy-nr*.34,nr*.02,cx+nr*.12,cy+nr*.12,nr
+ );
+ ng.addColorStop(0,"#ffffff");
+ ng.addColorStop(.2,"#f2ffff");
+ ng.addColorStop(.45,color);
+ ng.addColorStop(.8,color+"ee");
+ ng.addColorStop(1,color+"99");
+ x.globalAlpha=1;
+ x.fillStyle=ng;
+ x.beginPath();x.arc(cx,cy,nr,0,TAU);x.fill();
+
+ x.globalAlpha=.95;
+ x.strokeStyle="#ffffff";
+ x.lineWidth=Math.max(.8,nr*.025);
+ x.beginPath();x.arc(cx,cy,nr*.78,-.9,1.15);x.stroke();
+
+ x.globalAlpha=1;
+ x.fillStyle="#ffffff";
+ x.beginPath();x.arc(cx-nr*.2,cy-nr*.22,Math.max(1,nr*.075),0,TAU);x.fill();
+ x.restore();
+
+ // Interlocking geometric facets rotate inside the glass shell.
+ for(let n=0;n<2;n++){
+  const pts=[],rot=t*(n?-.18:.15)+n*Math.PI/3;
+  for(let j=0;j<=6;j++){
+   const a=j/6*TAU+rot;
+   pts.push([cx+Math.cos(a)*coreR*1.85,cy+Math.sin(a)*coreR*1.85]);
+  }
+  path(pts,n?"#fff0c0":color,1,.65,4);
+ }
+
+
+
+ 
+// JARVIS_MAX_ZOOM_ORBITAL_CIRCUIT_V3
+if(!jarvis2D && Z>1.25){
+  x.save();
+  const rr=coreR, spin=t*.22;
+  x.lineWidth=.8;
+  x.strokeStyle=color;
+  x.globalAlpha*=.62;
+
+  // Precision segmented orbital rings.
+  for(let j=0;j<5;j++){
+    const r=rr*(1.12+j*.19), count=18+j*4;
+    for(let k=0;k<count;k++){
+      const a=k*TAU/count+spin*(j%2?1:-1);
+      const gap=TAU/count*.28;
+      x.beginPath();
+      x.arc(cx,cy,r,a+gap*.5,a+TAU/count-gap*.5);
+      x.stroke();
+    }
+  }
+
+  // Nested faceted geometry.
+  for(let j=0;j<3;j++){
+    const r=rr*(1.28+j*.25), sides=8+j*4;
+    x.beginPath();
+    for(let k=0;k<=sides;k++){
+      const a=k*TAU/sides+spin*(j%2?-.7:.7);
+      const px=cx+Math.cos(a)*r, py=cy+Math.sin(a)*r;
+      if(k===0)x.moveTo(px,py);else x.lineTo(px,py);
+    }
+    x.stroke();
+  }
+
+  // Radial circuit traces with stepped elbows and terminal nodes.
+  for(let k=0;k<24;k++){
+    const a=k*TAU/24+spin*.35;
+    const r1=rr*1.16, r2=rr*(1.58+(k%3)*.09);
+    const r3=r2+rr*.09;
+    const bx=cx+Math.cos(a)*r1, by=cy+Math.sin(a)*r1;
+    const mx=cx+Math.cos(a+.035)*r2, my=cy+Math.sin(a+.035)*r2;
+    const ex=cx+Math.cos(a)*r3, ey=cy+Math.sin(a)*r3;
+    x.beginPath();x.moveTo(bx,by);x.lineTo(mx,my);x.lineTo(ex,ey);x.stroke();
+    x.beginPath();x.arc(ex,ey,k%4===0?rr*.025:rr*.012,0,TAU);x.stroke();
+    if(k%3===0){
+      x.beginPath();
+      x.moveTo(mx-Math.sin(a)*rr*.035,my+Math.cos(a)*rr*.035);
+      x.lineTo(mx+Math.sin(a)*rr*.035,my-Math.cos(a)*rr*.035);
+      x.stroke();
+    }
+  }
+
+  // Moving scan arcs and bright indexing marks.
+  for(let j=0;j<4;j++){
+    const r=rr*(1.38+j*.2), a=spin*(j%2?-.8:1.1)+j*1.7;
+    x.lineWidth=j===0?1.8:1;
+    x.beginPath();x.arc(cx,cy,r,a,a+Math.PI*(.24+j*.06));x.stroke();
+    x.lineWidth=.8;
+  }
+  for(let k=0;k<48;k++){
+    const a=k*TAU/48-spin*.25;
+    const r1=rr*1.72, r2=r1+(k%4===0?rr*.09:rr*.035);
+    x.beginPath();
+    x.moveTo(cx+Math.cos(a)*r1,cy+Math.sin(a)*r1);
+    x.lineTo(cx+Math.cos(a)*r2,cy+Math.sin(a)*r2);
+    x.stroke();
+  }
+  x.restore();
+}
+
+
+// JARVIS_NETTED_MESH_V3_SMOOTH_FADE
+const netProgress=Math.max(0,Math.min(1,(Z-1.08)/.72));
+const netFade=netProgress*netProgress*(3-2*netProgress);
+if(!jarvis2D && netFade>.002){
+  x.save();
+  x.globalAlpha*=netFade;
+  const R=coreR*2.0, spin=t*.19;
+  const rows=28, cols=56, points=[];
+  x.lineWidth=.7;
+
+  // Build a spherical net with curved latitude and longitude strands.
+  for(let i=0;i<=rows;i++){
+    const lat=-Math.PI/2+Math.PI*i/rows;
+    points[i]=[];
+    for(let j=0;j<cols;j++){
+      const lon=TAU*j/cols+spin;
+      const wobble=1+.012*Math.sin(j*1.7+i*.8+t*.3);
+      const px=Math.cos(lat)*Math.cos(lon)*wobble;
+      const py=Math.sin(lat)*wobble;
+      const pz=Math.cos(lat)*Math.sin(lon);
+      points[i][j]={
+        x:cx+R*px,y:cy+R*py,z:pz,
+        lat,lon,px,py
+      };
+    }
+  }
+
+  // Continuous net strands around the orb.
+  for(let i=1;i<rows;i++){
+    for(let j=0;j<cols;j++){
+      const a=points[i][j], b=points[i][(j+1)%cols];
+      if(a.z<-.25&&b.z<-.25)continue;
+      x.globalAlpha=.16+Math.max(0,(a.z+b.z)/2)*.42;
+      x.beginPath();x.moveTo(a.x,a.y);x.lineTo(b.x,b.y);x.stroke();
+    }
+  }
+
+  // Crossing strands create a woven diamond-net pattern.
+  for(let i=0;i<rows;i++){
+    for(let j=0;j<cols;j++){
+      const a=points[i][j];
+      const b=points[i+1][(j+1)%cols];
+      const c=points[i+1][(j-1+cols)%cols];
+      if(a.z>-.2&&b.z>-.2){
+        x.globalAlpha=.24+Math.max(0,(a.z+b.z)/2)*.38;
+        x.beginPath();x.moveTo(a.x,a.y);x.lineTo(b.x,b.y);x.stroke();
+      }
+      if((i+j)%2===0&&a.z>-.05&&c.z>-.05){
+        x.globalAlpha=.18;
+        x.beginPath();x.moveTo(a.x,a.y);x.lineTo(c.x,c.y);x.stroke();
+      }
+    }
+  }
+
+  // Reinforced net knots at intersections.
+  for(let i=2;i<rows;i+=2){
+    for(let j=0;j<cols;j+=2){
+      const p=points[i][j];
+      if(p.z<-.05)continue;
+      const pulse=.75+.25*Math.sin(t*1.8+i*.6+j*.4);
+      const r=R*.008*pulse;
+      x.globalAlpha=.35+p.z*.5;
+      x.beginPath();x.arc(p.x,p.y,r,0,TAU);x.stroke();
+      if(j%8===0){
+        x.beginPath();x.arc(p.x,p.y,r*2.1,0,TAU);x.stroke();
+      }
+    }
+  }
+  x.restore();
+}
+
+// JARVIS_OUTER_SHELL_DETAIL_V1
+if(!jarvis2D && Z>1.25){
+  x.save();
+  const OR=coreR*2.0, phase=t*.16;
+  const fade=Math.max(0,Math.min(1,(Z-1.1)/.65));
+  x.globalAlpha*=fade;
+  x.strokeStyle=color;
+  x.lineWidth=.8;
+
+  // Outer precision orbital bands with varied gaps.
+  for(let n=0;n<7;n++){
+    const r=OR*(1.035+n*.045);
+    const segs=12+n*3;
+    for(let k=0;k<segs;k++){
+      const a=k*TAU/segs+phase*(n%2?-.7:.8);
+      const span=TAU/segs*(.48+(k%3)*.12);
+      x.globalAlpha=fade*(.25+(k%4===0?.3:0));
+      x.beginPath();x.arc(cx,cy,r,a,a+span);x.stroke();
+    }
+  }
+
+  // Radial spokes with fine etched crossbars.
+  for(let k=0;k<96;k++){
+    const a=k*TAU/96+phase*.3;
+    const r1=OR*(1.025+(k%4)*.018);
+    const r2=r1+OR*(k%8===0?.09:.035);
+    x.globalAlpha=fade*(k%4===0?.8:.34);
+    x.beginPath();
+    x.moveTo(cx+Math.cos(a)*r1,cy+Math.sin(a)*r1);
+    x.lineTo(cx+Math.cos(a)*r2,cy+Math.sin(a)*r2);
+    x.stroke();
+
+    if(k%4===0){
+      const rr=(r1+r2)/2;
+      const px=cx+Math.cos(a)*rr,py=cy+Math.sin(a)*rr;
+      x.beginPath();
+      x.moveTo(px-Math.sin(a)*OR*.012,py+Math.cos(a)*OR*.012);
+      x.lineTo(px+Math.sin(a)*OR*.012,py-Math.cos(a)*OR*.012);
+      x.stroke();
+    }
+  }
+
+  // Outer diamond nodes and animated signal beads.
+  for(let k=0;k<32;k++){
+    const a=k*TAU/32-phase*(k%2?-.35:.5);
+    const r=OR*(1.19+.018*Math.sin(t*1.4+k));
+    const px=cx+Math.cos(a)*r,py=cy+Math.sin(a)*r;
+    const sz=OR*(k%4===0?.025:.014);
+    x.globalAlpha=fade*(.45+.35*(.5+.5*Math.sin(t*2+k)));
+    x.beginPath();
+    x.moveTo(px,py-sz);x.lineTo(px+sz,py);
+    x.lineTo(px,py+sz);x.lineTo(px-sz,py);
+    x.closePath();x.stroke();
+    if(k%4===0){
+      x.beginPath();x.arc(px,py,sz*1.8,0,TAU);x.stroke();
+    }
+  }
+
+  // Sweeping outer scan arcs.
+  for(let k=0;k<4;k++){
+    const r=OR*(1.11+k*.045);
+    const a=phase*(k%2?-.8:1.1)+k*TAU/4;
+    x.globalAlpha=fade*.65;
+    x.lineWidth=k===0?1.5:.7;
+    x.beginPath();x.arc(cx,cy,r,a,a+.38+ k*.12);x.stroke();
+  }
+  x.restore();
+}
+
+// JARVIS_DENSE_BLOB_SURFACE_V2
+if(!jarvis2D && Z>1.25){
+  x.save();
+  const R=coreR*2.0, ph=t*.14;
+  const fade=Math.max(0,Math.min(1,(Z-1.1)/.65));
+  x.strokeStyle=color;
+  x.lineWidth=.65;
+
+  // Dense curved meridian engraving across the entire shell.
+  for(let k=0;k<72;k++){
+    const a=k*TAU/72+ph*(k%2?1:-1);
+    x.globalAlpha=fade*(k%6===0?.5:.19);
+    x.beginPath();
+    x.ellipse(cx,cy,R*(.91+.055*Math.sin(k*2.1)),
+      R*(.91+.055*Math.cos(k*1.7)),a,0,TAU);
+    x.stroke();
+  }
+
+  // Repeating hexagonal micro-panels distributed around the shell.
+  for(let ring=0;ring<9;ring++){
+    const rad=R*(.48+ring*.071);
+    const count=8+ring*5;
+    for(let k=0;k<count;k++){
+      const a=k*TAU/count+ph*(ring%2?-.4:.5);
+      const px=cx+Math.cos(a)*rad;
+      const py=cy+Math.sin(a)*rad;
+      const sz=R*(.018+(k%3)*.004);
+      x.globalAlpha=fade*(.2+(ring%3)*.09);
+      x.beginPath();
+      for(let q=0;q<=6;q++){
+        const aa=q*TAU/6+ph*.3;
+        const xx=px+Math.cos(aa)*sz;
+        const yy=py+Math.sin(aa)*sz*.72;
+        if(q===0)x.moveTo(xx,yy);else x.lineTo(xx,yy);
+      }
+      x.stroke();
+
+      // Inner panel diagonals.
+      if((k+ring)%2===0){
+        x.beginPath();
+        x.moveTo(px-sz*.55,py-sz*.35);
+        x.lineTo(px+sz*.55,py+sz*.35);
+        x.moveTo(px+sz*.55,py-sz*.35);
+        x.lineTo(px-sz*.55,py+sz*.35);
+        x.stroke();
+      }
+    }
+  }
+
+  // Interconnected circuit paths with stepped branches.
+  for(let k=0;k<60;k++){
+    const a=k*TAU/60+ph*.65;
+    const r1=R*(.78+.06*Math.sin(k*1.3));
+    const r2=r1+R*(.035+(k%4)*.012);
+    const r3=r2+R*.035;
+    const px=cx+Math.cos(a)*r1,py=cy+Math.sin(a)*r1;
+    const mx=cx+Math.cos(a+.018)*r2,my=cy+Math.sin(a+.018)*r2;
+    const ex=cx+Math.cos(a)*r3,ey=cy+Math.sin(a)*r3;
+    x.globalAlpha=fade*(k%5===0?.7:.3);
+    x.beginPath();x.moveTo(px,py);x.lineTo(mx,my);x.lineTo(ex,ey);x.stroke();
+    if(k%3===0){
+      x.beginPath();x.arc(ex,ey,R*.009,0,TAU);x.stroke();
+    }
+  }
+
+  // Fine radial graduations and repeated luminous junctions.
+  for(let k=0;k<240;k++){
+    const a=k*TAU/240-ph*.2;
+    const r=R*(.91+.035*Math.sin(k*1.9));
+    const len=R*(k%10===0?.035:k%3===0?.018:.008);
+    x.globalAlpha=fade*(k%10===0?.7:.28);
+    x.beginPath();
+    x.moveTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r);
+    x.lineTo(cx+Math.cos(a)*(r+len),cy+Math.sin(a)*(r+len));
+    x.stroke();
+  }
+
+  // Moving signal nodes scattered across all surface bands.
+  for(let k=0;k<54;k++){
+    const a=k*TAU/54+ph*(k%2?1:-1);
+    const r=R*(.56+.31*(.5+.5*Math.sin(k*2.17)));
+    const px=cx+Math.cos(a)*r,py=cy+Math.sin(a)*r;
+    const pulse=.7+.3*Math.sin(t*2.1+k);
+    const sz=R*.008*pulse;
+    x.globalAlpha=fade*(.35+.35*pulse);
+    x.beginPath();x.arc(px,py,sz,0,TAU);x.stroke();
+    x.beginPath();
+    x.moveTo(px-sz*2.4,py);x.lineTo(px+sz*2.4,py);
+    x.moveTo(px,py-sz*2.4);x.lineTo(px,py+sz*2.4);
+    x.stroke();
+  }
+  x.restore();
+}
+// Restore orb transform so the animated background beam stays independent.
+ x.restore();
+ // Thin axial energy beam; no decorative background/platform ovals.
+ const beam=x.createLinearGradient(cx,cy+R,cx,H);
+ beam.addColorStop(0,color+"66");beam.addColorStop(1,color+"00");
+ x.save();x.strokeStyle=beam;x.lineWidth=1;x.beginPath();
+ x.moveTo(cx,cy+R*.9);x.lineTo(cx,H);x.stroke();x.restore();
+ x.restore();
+}
+
+
+
+
+
+
+
+// JARVIS_2D_MODE_V2 tap-to-transform controller.
+(()=>{
+ const canvas=document.getElementById("orb");
+ if(!canvas)return;
+
+ let startX=0,startY=0,startTime=0;
+ let moved=false;
+
+ canvas.addEventListener("pointerdown",e=>{
+   if(e.pointerType==="mouse"&&e.button!==0)return;
+   startX=e.clientX;
+   startY=e.clientY;
+   startTime=performance.now();
+   moved=false;
+ },true);
+
+ canvas.addEventListener("pointermove",e=>{
+   if(Math.hypot(e.clientX-startX,e.clientY-startY)>12)
+     moved=true;
+ },true);
+
+ canvas.addEventListener("pointerup",e=>{
+   const elapsed=performance.now()-startTime;
+   const distance=Math.hypot(
+     e.clientX-startX,
+     e.clientY-startY
+   );
+
+   const radius=Math.min(w,h)*.235;
+   const centerX=w*.5;
+   const centerY=h*.46;
+
+   const inside=Math.hypot(
+     e.clientX-centerX,
+     e.clientY-centerY
+   )<radius*1.15;
+
+   if(!moved&&distance<12&&elapsed<350&&inside){
+     jarvisZoomStart=zoom;
+     jarvisZoomTarget=Math.min(zoom,.18/(.235*.88));
+     jarvis2D=!jarvis2D;
+ document.body.classList.toggle('prime-2d',jarvis2D);
+     jarvisTransitionTime=performance.now();
+     rotVelX=0;
+     rotVelY=0;
+     dragging=false;
+     expansion=0;
+     console.log(
+       "JARVIS PRIME MODE:",
+       jarvis2D?"2D":"3D"
+     );
+   }
+ },true);
+})();
+
+// Touch/drag: manually rotate the reactor in 3D.
+(()=>{
+ const canvas=document.getElementById('orb');
+ if(!canvas)return;
+ let active=null,lastX=0,lastY=0,lastTime=0;
+ canvas.addEventListener('pointerdown',e=>{
+  if(e.pointerType==='mouse'&&e.button!==0)return;
+  active=e.pointerId;lastX=e.clientX;lastY=e.clientY;
+  lastTime=e.timeStamp;rotVelX=0;rotVelY=0;
+  expansion=1;
+  clearTimeout(window.jarvisExpansionTimer);
+  window.jarvisExpansionTimer=setTimeout(()=>{expansion=0},450);
+  try{canvas.setPointerCapture(active)}catch(_){}
+ });
+ canvas.addEventListener('pointermove',e=>{
+  if(active!==e.pointerId)return;
+  const now=e.timeStamp,dt=Math.max(.008,(now-lastTime)/1000);
+  const dx=e.clientX-lastX,dy=e.clientY-lastY;
+  lastX=e.clientX;lastY=e.clientY;lastTime=now;
+  if(jarvis2D)return;
+  manualRotY+=dx*.0045;
+  manualRotX=Math.max(-Math.PI,Math.min(Math.PI,manualRotX+dy*.0045));
+  rotVelY=Math.max(-9,Math.min(9,dx*.0045/dt));
+  rotVelX=Math.max(-9,Math.min(9,dy*.0045/dt));
+ });
+ const release=e=>{if(active===e.pointerId)active=null};
+ canvas.addEventListener('pointerup',release);
+ canvas.addEventListener('pointercancel',release);
+})();
+function animate(ms){
+ requestAnimationFrame(animate);
+ if(document.hidden||ms-lastFrame<33)return;
+ lastFrame=ms;
+ draw(ms);
+}
+requestAnimationFrame(animate);
+
+// Touch rotation.
+c.addEventListener("pointerdown",e=>{
+ if(e.pointerType==="touch")return;
+ dragging=true;
+ pointerX=e.clientX;
+ pointerY=e.clientY;
+});
+
+c.addEventListener("pointermove",e=>{
+ if(!dragging)return;
+ ry+=(e.clientX-pointerX)*.008;
+ rx+=(e.clientY-pointerY)*.008;
+ pointerX=e.clientX;
+ pointerY=e.clientY;
+});
+
+addEventListener("pointerup",()=>dragging=false);
+
+// Mouse zoom.
+c.addEventListener("wheel",e=>{
+ e.preventDefault();
+ zoom=Math.max(1e-12,Math.min(1e12,
+ zoom*Math.exp(-e.deltaY*.001)));
+},{passive:false});
+
+// Tablet gestures: distinguish single and double taps before acting.
+let tapTimer=null, pendingTap=null, touchMoved=false;
+const tapWindow=240, tapMoveLimit=28;
+function primeCycleTheme(){
+ const t=document.getElementById("theme");
+ if(!t||!t.options.length)return;
+ const opts=[...t.options].filter(o=>!o.disabled);
+ const i=opts.findIndex(o=>o.value===t.value);
+ if(opts.length>1){
+  t.value=opts[(i+1)%opts.length].value;
+  t.dispatchEvent(new Event("input",{bubbles:true}));
+  t.dispatchEvent(new Event("change",{bubbles:true}));
+ }
+}
+c.addEventListener("touchstart",e=>{
+ e.preventDefault();
+ if(e.touches.length===1){
+  const t=e.touches[0], now=Date.now();
+  pointerX=t.clientX; pointerY=t.clientY; touchMoved=false;
+  if(pendingTap && now-pendingTap.time<=tapWindow &&
+     Math.hypot(t.clientX-pendingTap.x,t.clientY-pendingTap.y)<=tapMoveLimit){
+   clearTimeout(tapTimer); tapTimer=null; pendingTap=null;
+   primeCycleTheme();
+   return;
+  }
+  if(pendingTap){
+   clearTimeout(tapTimer);
+   const prev=pendingTap;
+   tapTimer=setTimeout(()=>{
+    pointerX=prev.x; pointerY=prev.y;
+    tapTimer=null; pendingTap=null;
+   },0);
+  }
+  pendingTap={time:now,x:t.clientX,y:t.clientY};
+  clearTimeout(tapTimer);
+  tapTimer=setTimeout(()=>{
+   if(pendingTap && !touchMoved){
+    pointerX=pendingTap.x; pointerY=pendingTap.y;
+   }
+   pendingTap=null; tapTimer=null;
+  },tapWindow);
+ }
+ if(e.touches.length===2){
+  clearTimeout(tapTimer); tapTimer=null; pendingTap=null;
+  lastDistance=Math.hypot(
+   e.touches[0].clientX-e.touches[1].clientX,
+   e.touches[0].clientY-e.touches[1].clientY
+  );
+ }
+},{passive:false});
+
+c.addEventListener("touchmove",e=>{
+ e.preventDefault();
+
+ if(e.touches.length===1){
+  const p=e.touches[0];
+  ry+=(p.clientX-pointerX)*.008;
+  rx+=(p.clientY-pointerY)*.008;
+  pointerX=p.clientX;
+  pointerY=p.clientY;
+ }
+
+ if(e.touches.length===2){
+  const d=Math.hypot(
+   e.touches[0].clientX-e.touches[1].clientX,
+   e.touches[0].clientY-e.touches[1].clientY
+  );
+
+  if(lastDistance>0){
+   zoom=Math.max(1e-12,Math.min(1e12,
+   zoom*d/lastDistance));
+  }
+
+  lastDistance=d;
+ }
+},{passive:false});
+
+document.getElementById("toggle").onclick=()=>{
+let p=document.getElementById("chat"),open=p.style.display==="flex";
+p.style.display=open?"none":"flex";
+document.getElementById("toggle").textContent=open?"CHAT":"CLOSE";
+};
+function add(role,msg){let e=document.createElement("div");e.className="message "+role;e.textContent=role.toUpperCase()+": "+msg;document.getElementById("messages").append(e);e.scrollIntoView()}
+async function send(){
+let i=document.getElementById("prompt"),v=i.value.trim();
+if(!v)return;
+add("user",v);i.value="";
+add("jarvis","Thinking...");
+let reply=document.querySelector("#messages .message:last-child");
+try{
+const response=await fetch("/api/chat",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({message:v})
+});
+const data=await response.json();
+reply.textContent="JARVIS: "+(data.reply||data.error||"No response");
+}catch(e){
+reply.textContent="JARVIS: Local AI server unavailable.";
+}
+}
+document.getElementById("send").onclick=send;
+document.getElementById("prompt").onkeydown=e=>{if(e.key==="Enter")send()};
+themeSet("arctic");</script>
+<script>
+/* JARVIS_BOTTOM_COMMAND_PANEL_V1 */
+(()=>{
+ const $=id=>document.getElementById(id);
+ const status=$('primePermissionStatus');
+ let stream=null;
+ /* OBSOLETE_COMMAND_HANDLER_DISABLED
+$('primeCommandForm').addEventListener('submit',e=>{
+  e.preventDefault();
+  const value=$('primeCommandInput').value.trim();
+  if(!value)return;
+  $('primeCommandSafety').textContent='NOT EXECUTED';
+  status.textContent='Command entered; backend integration required.';
+  if(typeof add==='function')add('user',value);
+  if(typeof add==='function')add('jarvis','Command panel is not connected to the AI backend.');
+  $('primeCommandInput').value='';
+ });
+ OBSOLETE_COMMAND_HANDLER_DISABLED */
+ $('primePermissionButton').addEventListener('click',async()=>{
+  const lines=['Microphone: '+(stream?'granted for this page': 'not requested')];
+  if(navigator.permissions?.query){
+   for(const name of ['camera','geolocation','notifications']){
+    try{
+     const result=await navigator.permissions.query({name});
+     lines.push(name+': '+result.state);
+    }catch(_){lines.push(name+': status unavailable');}
+   }
+  }else lines.push('Other permission states unavailable in this browser.');
+  status.textContent=lines.join(' · ');
+ });
+ window.addEventListener('pagehide',()=>{
+  if(stream)stream.getTracks().forEach(track=>track.stop());
+ });
+})();
+</script>
+<script>
+/* JARVIS_DATA_CARDS_V1 */
+(()=>{
+ const $=id=>document.getElementById(id);
+ const row=(k,v)=>'<div class="prime-row"><span>'+k+
+   '</span><span class="prime-value">'+v+'</span></div>';
+ const safe=s=>String(s).replace(/[&<>"']/g,c=>({
+  '&':'&amp;','<':'&lt;','>':'&gt;',
+  '"':'&quot;',"'":'&#39;'
+ })[c]);
+ const tasks=[];
+ function update(){
+  document.body.classList.toggle('prime-2d',
+   typeof jarvis2D!=='undefined' && jarvis2D);
+  return; // Live API updater owns the card values.
+  const mem=navigator.deviceMemory;
+  const cores=navigator.hardwareConcurrency;
+  $('primeSystemData').innerHTML=
+   row('CPU usage','Unavailable in browser')+
+   row('CPU threads',cores??'N/A')+
+   row('RAM usage','Unavailable in browser')+
+   row('Device RAM',mem?mem+' GB (approx. estimate)':'N/A')+
+   row('Battery','Checking...')+
+   row('Storage',navigator.storage?.estimate?'Checking...':'Unavailable')+
+   row('Network',navigator.onLine?'Online':'Offline')+
+   row('Connection',navigator.connection?.effectiveType||'Unknown');
+  $('primeAIData').innerHTML=
+   row('Model','Qwen local model · backend unlinked')+
+   row('AI status','Engine integration pending')+
+   row('Inference','Not measured')+
+   row('Context','Not reported')+
+   row('Microphone',navigator.mediaDevices?'Permission required':'Unavailable')+
+   row('TTS',('speechSynthesis' in window)?'Browser available':'Unavailable');
+  $('primeTaskData').innerHTML=
+   row('Running','0')+
+   row('Queued','0')+
+   row('Commands logged',tasks.length)+
+   row('Last update',new Date().toLocaleTimeString())+
+   row('Backend','Not connected')+
+   row('Automation','Inactive')+
+   row('Execution safety','Commands not executed');
+  $('primeTaskHistory').innerHTML=tasks.map(t=>
+   '<div class="prime-row">'+safe(t)+'</div>').join('');
+ }
+ let battery=null;
+ if(navigator.getBattery){
+  navigator.getBattery().then(b=>{
+   battery=b;
+   function showBattery(){
+    const label=Math.round(b.level*100)+'%'+
+     (b.charging?' · charging':'');
+    const target=$('primeSystemData');
+    if(target){
+     const cells=target.querySelectorAll('.prime-row');
+     for(const cell of cells)
+      if(cell.firstElementChild?.textContent==='Battery')
+       cell.lastElementChild.textContent=label;
+    }
+   }
+   setInterval(showBattery,2000);
+  }).catch(()=>{});
+ }
+ document.querySelectorAll('#primeCards [data-expand]').forEach(b=>{
+  b.addEventListener('click',()=>{
+   b.closest('.prime-card').classList.toggle('expanded');
+  });
+ });
+ $('primeUnloadInfo').addEventListener('click',()=>{
+  $('primeModelInfo').textContent=
+   'Model controls will be available after backend connection.';
+ });
+ $('primeChatLog').textContent=
+  'JARVIS PRIME\nChat backend not connected.';
+ /* OBSOLETE_CHAT_HANDLER_DISABLED
+$('primeChatForm').addEventListener('submit',e=>{
+  e.preventDefault();
+  const input=$('primeChatInput');
+  const message=input.value.trim();
+  if(!message)return;
+  const line=document.createElement('div');
+  line.textContent='YOU: '+message;
+  $('primeChatLog').append(line);
+  const notice=document.createElement('div');
+  notice.textContent='JARVIS: Backend not connected. Command not executed.';
+  $('primeChatLog').append(notice);
+  $('primeChatLog').scrollTop=$('primeChatLog').scrollHeight;
+  tasks.unshift(new Date().toLocaleTimeString()+
+   ' · Command not executed');
+  if(tasks.length>20)tasks.pop();
+  input.value='';
+  update();
+ });
+ OBSOLETE_CHAT_HANDLER_DISABLED */
+ // Legacy placeholder refresh disabled.
+})();
+</script>
+<script>
+// JARVIS_DIRECT_ROUTING_V1
+(()=>{
+ const $=id=>document.getElementById(id);
+
+ const actions = new Set([
+  "open settings",
+  "open wifi settings",
+  "open bluetooth settings",
+  "open display settings",
+  "open sound settings"
+ ]);
+
+ let busy=false;
+
+ async function route(message,target){
+  if(busy){
+   const notice=document.createElement("div");
+   notice.textContent="JARVIS: Previous request still running.";
+   target.append(notice);
+   return;
+  }
+
+  const normalized=message.trim().toLowerCase().replace(/\s+/g," ");
+  // JARVIS_APP_LAUNCHER_V1
+  const device=/^(open|launch|start)\\s+\\S/i.test(normalized);
+  const explicitWiki=/^\/?wiki\s+/i.test(message);
+  const query=explicitWiki?message.replace(/^\/?wiki\s+/i,"").trim():message;
+  const excludedIntent=/\b(how do i|how can i|why|explain how|solve|calculate|plan|write|create|compare|debug|recommend|best way)\b/i.test(query);
+  const factualIntent=/^(who is|who was|who are|what is|what was|what are|where is|where was|when did|when was|tell me about|give me facts about|look up|find information about|search for)\s+/i.test(query);
+  const wiki=explicitWiki || (factualIntent && !excludedIntent);
+
+  const run=/^exec:\s*/i.test(message.trim());
+const endpoint=device?"/api/device":run?"/api/run":wiki?"/api/wiki":"/api/chat";
+
+  const line=document.createElement("div");
+  line.classList.add("jarvis-message-bubble","jarvis-ai-bubble");
+  line.textContent=device
+   ?"JARVIS: Opening…"
+   :wiki?"JARVIS: Searching Wikipedia…"
+   :"JARVIS: Thinking locally…";
+
+  target.append(line);
+  target.scrollTop=target.scrollHeight;
+
+  busy=true;
+
+  try{
+   const response=await fetch(endpoint,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({message:device?normalized:run?message:query})
+   });
+
+   const type=response.headers.get("content-type")||"";
+
+   if(!type.includes("application/json"))
+    throw Error("Backend returned an invalid response.");
+
+   const data=await response.json();
+
+   if(!response.ok)
+    throw Error(data.error||"Request failed.");
+
+   if(device){
+    line.textContent="JARVIS: "+(data.reply||"Activity launched.");
+   }else if(wiki){
+    line.textContent=(data.results||[]).map(r=>
+     r.title+"\n"+(r.extract||"")+"\n"+r.url
+    ).join("\n\n")||"No Wikipedia results.";
+   }else{
+    line.textContent="JARVIS: "+(data.reply||"No response.");
+   }
+  }catch(e){
+   line.textContent="JARVIS: "+e.message;
+  }finally{
+   busy=false;
+   target.scrollTop=target.scrollHeight;
+  }
+ }
+
+ function attach(formId,inputId,targetId){
+  const form=$(formId),input=$(inputId),target=$(targetId);
+  if(!form||!input||!target)return;
+
+  form.addEventListener("submit",e=>{
+   e.preventDefault();
+   e.stopImmediatePropagation();
+
+   const message=input.value.trim();
+   if(!message)return;
+
+   const user=document.createElement("div");
+   user.classList.add("jarvis-message-bubble","jarvis-user-bubble");
+   user.textContent="YOU: "+message;
+   target.append(user);
+
+   input.value="";
+   route(message,target);
+  },true);
+ }
+
+ attach("primeCommandForm","primeCommandInput","primeChatLog");
+ attach("primeChatForm","primeChatInput","primeChatLog");
+
+ const log=$("primeChatLog");
+ if(log)log.textContent="JARVIS PRIME · DIRECT COMMANDS READY";
+})();
+</script>
+
+<script>
+// JARVIS_VOICE_REACTIVE_ORB_V1
+(()=>{
+ const $=id=>document.getElementById(id);
+ const button=$("primeMicButton"),status=$("primePermissionStatus");
+ let rec=null,stream=null,ctx=null,raf=0,stopRequested=false;
+ window.jarvisVoiceInputLevel=0;
+ window.jarvisVoiceOutputLevel=0;
+ window.jarvisVoiceListening=false;
+ window.jarvisVoiceSpeaking=false;
+
+ function stopMeter(){
+  cancelAnimationFrame(raf);raf=0;
+  if(ctx){ctx.close().catch(()=>{});ctx=null;}
+  if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}
+  window.jarvisVoiceInputLevel=0;
+ }
+ async function meter(){
+  try{
+   stream=await navigator.mediaDevices.getUserMedia({audio:true});
+   ctx=new (window.AudioContext||window.webkitAudioContext)();
+   const source=ctx.createMediaStreamSource(stream),an=ctx.createAnalyser();
+   an.fftSize=256;source.connect(an);
+   const data=new Uint8Array(an.fftSize);
+   const tick=()=>{
+    if(!ctx)return;
+    an.getByteTimeDomainData(data);
+    let sum=0;for(const v of data){const n=(v-128)/128;sum+=n*n;}
+    const level=Math.min(1,Math.sqrt(sum/data.length)*5);
+    window.jarvisVoiceInputLevel=level;
+    raf=requestAnimationFrame(tick);
+   };tick();
+  }catch(e){
+   if(status)status.textContent="Microphone level visual unavailable: "+(e.name||"permission denied");
+  }
+ }
+ function finish(){
+  window.jarvisVoiceListening=false;
+  window.jarvisVoiceInputLevel=0;
+  stopMeter();
+  if(button)button.textContent="ENABLE MIC";
+  rec=null;
+ }
+ if(button){
+  button.addEventListener("click",e=>{
+   e.preventDefault();e.stopImmediatePropagation();
+   if(rec){stopRequested=true;rec.stop();return;}
+   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+   if(!SR){if(status)status.textContent="Speech recognition unavailable in this browser.";return;}
+   stopRequested=false;
+   rec=new SR();rec.lang="en-IN";rec.continuous=false;rec.interimResults=true;
+   window.jarvisVoiceListening=true;
+   button.textContent="LISTENING…";
+   if(status)status.textContent="Listening — speak now.";
+   meter();
+   rec.onresult=e=>{
+    let interim="",finalText="";
+    for(let i=e.resultIndex;i<e.results.length;i++){
+     const part=e.results[i][0].transcript;
+     if(e.results[i].isFinal)finalText+=part;
+     else interim+=part;
+    }
+    const input=$("primeChatInput");
+    if(input){
+     const transcript=(finalText||interim).trim();
+     if(transcript){
+      input.value=transcript;
+      input.dispatchEvent(new Event("input",{bubbles:true}));
+     }
+    }
+    if(status)status.textContent=finalText.trim()
+     ?"Transcript ready in chat box — tap Send when ready."
+     :interim.trim()?"Transcribing: "+interim.trim():"Listening…";
+   };
+   rec.onerror=e=>{if(status)status.textContent="Voice input: "+e.error;};
+   rec.onend=finish;
+   try{rec.start();}catch(e){finish();if(status)status.textContent="Could not start voice input.";}
+  },true);
+ }
+ // Speak assistant replies and animate the orb from actual speech synthesis.
+ const log=$("primeChatLog");
+ if(log){
+  const observer=new MutationObserver(()=>{
+   const nodes=[...log.querySelectorAll("div")];
+   for(const node of nodes){
+    const text=(node.textContent||"").trim();
+    if(!text.startsWith("JARVIS:")||node.dataset.voiceHandled||/Thinking locally|Searching Wikipedia|Please wait/.test(text))continue;
+    node.dataset.voiceHandled="1";
+    if(!("speechSynthesis" in window))continue;
+    const spoken=text.replace(/^JARVIS:\s*/,"").trim();
+    if(!spoken||spoken==="The AI returned an empty response.")continue;
+    speechSynthesis.cancel();
+    const utterance=new SpeechSynthesisUtterance(spoken);
+    utterance.lang="en-IN";
+    utterance.onstart=()=>{
+     window.jarvisVoiceSpeaking=true;
+     window.jarvisVoiceOutputLevel=.65;
+    };
+    utterance.onboundary=()=>{
+     window.jarvisVoiceOutputLevel=.35+Math.random()*.65;
+    };
+    utterance.onend=utterance.onerror=()=>{
+     window.jarvisVoiceSpeaking=false;
+     window.jarvisVoiceOutputLevel=0;
+    };
+    speechSynthesis.speak(utterance);
+   }
+  });
+  observer.observe(log,{childList:true,subtree:true,characterData:true});
+ }
+ window.addEventListener("pagehide",()=>{try{rec?.stop();}catch(_){}stopMeter();});
+})();
+</script>
+
+
+
+
+
+<script>
+// JARVIS_STABLE_CARDS_V1
+(()=>{
+ const $=id=>document.getElementById(id);
+ const cache=new Map();
+
+ function setRow(parent,label,value){
+  if(!parent)return;
+
+  const key=parent.id+"|"+label;
+  let cell=cache.get(key);
+
+  if(!cell||!cell.isConnected){
+   cell=document.createElement("div");
+   cell.className="prime-row";
+
+   const name=document.createElement("span");
+   const data=document.createElement("span");
+
+   name.textContent=label;
+   data.className="prime-value";
+
+   cell.append(name,data);
+   parent.append(cell);
+   cache.set(key,cell);
+  }
+
+  const data=cell.lastElementChild;
+  const next=String(value);
+
+  if(data.textContent!==next)
+   data.textContent=next;
+ }
+
+ function initialize(id,labels){
+  const parent=$(id);
+  if(!parent)return;
+  parent.replaceChildren();
+
+  for(const label of labels)
+   setRow(parent,label,"—");
+ }
+
+ initialize("primeSystemData",[
+  "CPU threads","CPU usage","Total RAM",
+  "Used RAM","Available RAM",
+  "Total storage","Free storage",
+  "Battery","Network","Runtime environment","Runtime architecture"
+]);
+
+ initialize("primeAIData",[
+  "AI engine","Local model","Model",
+  "Processing","Microphone","Voice output"
+ ]);
+
+ let last=null;
+
+ function render(){
+  if(!last)return;
+
+  const d=last;
+  const sys=$("primeSystemData");
+  const ai=$("primeAIData");
+
+  const mb=v=>v==null?"—":v+" MB";
+  const gb=v=>v==null?"—":v+" GB";
+
+  setRow(sys,"CPU threads",d.cpu_threads??"—");
+  setRow(sys,"CPU usage",d.cpu_usage==null?"—":d.cpu_usage+"%");
+  setRow(sys,"Total RAM",mb(d.ram_total_mb));
+  setRow(sys,"Used RAM",mb(d.ram_used_mb));
+  setRow(sys,"Available RAM",mb(d.ram_available_mb));
+  setRow(sys,"Total storage",gb(d.storage_total_gb));
+  setRow(sys,"Free storage",gb(d.storage_free_gb));
+  setRow(sys,"Runtime environment",d.runtime_environment??"Unknown");
+  setRow(sys,"Runtime architecture",d.runtime_arch??"Unknown");
+
+  if(d.battery!=null)
+   setRow(sys,"Battery",d.battery+"%");
+  else if(navigator.getBattery){
+   navigator.getBattery().then(b=>{
+    setRow(sys,"Battery",Math.round(b.level*100)+"%");
+   }).catch(()=>{});
+  }
+
+  setRow(sys,"Network",navigator.onLine?"Online":"Offline");
+
+  setRow(ai,"AI engine",d.engine?"Ready":"Missing");
+  setRow(ai,"Local model",d.model?"Ready":"Missing");
+  setRow(ai,"Model","Qwen2.5 1.5B Q4");
+  setRow(ai,"Processing","On-device");
+ }
+
+ function voice(){
+  const ai=$("primeAIData");
+
+  setRow(ai,"Microphone",
+   window.jarvisVoiceListening?"Listening":"Idle");
+
+  setRow(ai,"Voice output",
+   window.jarvisVoiceSpeaking?"Speaking":"Idle");
+ }
+
+ async function refresh(){
+  try{
+   const r=await fetch("/api/system",{cache:"no-store"});
+   if(!r.ok)throw Error("HTTP "+r.status);
+   last=await r.json();
+   render();
+  }catch(e){
+   console.warn("System refresh failed:",e);
+  }
+ }
+
+ refresh();
+ voice();
+
+ setInterval(refresh,5000);
+ setInterval(voice,300);
+})();
+</script>
+
+
+<script>
+// JARVIS_OPERATIONS_V1
+(()=>{
+ const $=id=>document.getElementById(id);
+ const panel=$("primeTaskData");
+ const history=$("primeTaskHistory");
+
+ if(!panel)return;
+
+ let active=0,completed=0,failed=0,total=0;
+ let lastActivity="None";
+ const records=[];
+
+ const fields={};
+
+ function field(name,value){
+  const line=document.createElement("div");
+  line.className="prime-row";
+
+  const label=document.createElement("span");
+  const data=document.createElement("span");
+
+  label.textContent=name;
+  data.className="prime-value";
+  data.textContent=value;
+
+  line.append(label,data);
+  fields[name]=data;
+  panel.append(line);
+ }
+
+ panel.replaceChildren();
+
+ field("Running","0");
+ field("Completed","0");
+ field("Failed","0");
+ field("Total requests","0");
+ field("Last activity","None");
+ field("AI status","Idle");
+ field("Execution safety","Permission controlled");
+
+ function update(){
+  fields["Running"].textContent=active;
+  fields["Completed"].textContent=completed;
+  fields["Failed"].textContent=failed;
+  fields["Total requests"].textContent=total;
+  fields["Last activity"].textContent=lastActivity;
+  fields["AI status"].textContent=active?"Processing":"Idle";
+ }
+
+ function record(message){
+  const time=new Date().toLocaleTimeString();
+
+  lastActivity=time;
+  records.unshift(time+" · "+message);
+
+  if(records.length>20)records.pop();
+
+  if(history){
+   history.replaceChildren();
+
+   for(const item of records){
+    const row=document.createElement("div");
+    row.className="prime-row";
+    row.textContent=item;
+    history.append(row);
+   }
+  }
+
+  update();
+ }
+
+ const originalFetch=window.fetch.bind(window);
+
+ window.fetch=async function(input,options){
+  const url=typeof input==="string"
+   ?input:input?.url||"";
+
+  const monitored=
+   url.includes("/api/chat")||
+   url.includes("/api/wiki");
+
+  if(!monitored)
+   return originalFetch(input,options);
+
+  active++;
+  total++;
+
+  const wiki=url.includes("/api/wiki");
+  record(wiki?"Wikipedia search started":"AI request started");
+
+  try{
+   const response=await originalFetch(input,options);
+
+   if(response.ok){
+    completed++;
+    record(wiki?"Wikipedia response received":"AI response received");
+   }else{
+    failed++;
+    record("Request failed: HTTP "+response.status);
+   }
+
+   return response;
+  }catch(error){
+   failed++;
+   record("Request failed: "+error.message);
+   throw error;
+  }finally{
+   active=Math.max(0,active-1);
+   update();
+  }
+ };
+
+ update();
+})();
+</script>
+
+
+<script>
+// JARVIS_FULLSCREEN_CHAT_V1
+(()=>{
+ const button=document.createElement("button");
+ button.id="jarvisFullChatButton";
+ button.textContent="◉ FULL CHAT";
+ button.setAttribute("aria-label","Open full-screen chat");
+
+ const burst=document.createElement("div");
+ burst.id="jarvisEnergyBurst";
+
+ const panel=document.createElement("section");
+ panel.id="jarvisFullChat";
+ panel.setAttribute("aria-label","JARVIS PRIME full-screen chat");
+
+ panel.innerHTML=`
+  <div id="jarvisFullChatHeader">
+   <span>◈ JARVIS PRIME · CHAT</span>
+   <button id="jarvisFullChatClose" aria-label="Close chat">×</button>
+  </div>
+  <div id="jarvisFullChatBody"></div>
+ `;
+
+ document.body.append(button,burst,panel);
+
+ const body=panel.querySelector("#jarvisFullChatBody");
+ const log=document.getElementById("primeChatLog");
+ const form=document.getElementById("primeChatForm");
+
+ if(!log||!form){
+  console.warn("JARVIS: Existing chat elements not found.");
+  button.disabled=true;
+  return;
+ }
+
+ const logParent=log.parentNode;
+ const formParent=form.parentNode;
+ const logNext=log.nextSibling;
+ const formNext=form.nextSibling;
+
+ let opened=false;
+ let timer;
+
+ function restore(node,parent,next){
+  if(next&&next.parentNode===parent)
+   parent.insertBefore(node,next);
+  else
+   parent.appendChild(node);
+ }
+
+ function openChat(){
+  if(opened)return;
+  opened=true;
+
+  document.body.classList.add("jarvis-chat-transition");
+  document.body.classList.add("jarvis-burst");
+
+  clearTimeout(timer);
+
+  timer=setTimeout(()=>{
+   body.append(log,form);
+   document.body.classList.add("jarvis-full-chat");
+   document.body.classList.remove("jarvis-burst");
+   log.scrollTop=log.scrollHeight;
+  },600);
+ }
+
+ function closeChat(){
+  if(!opened)return;
+  opened=false;
+  clearTimeout(timer);
+
+  document.body.classList.remove("jarvis-full-chat");
+  document.body.classList.remove("jarvis-burst");
+
+  setTimeout(()=>{
+   restore(log,logParent,logNext);
+   restore(form,formParent,formNext);
+   document.body.classList.remove("jarvis-chat-transition");
+  },750);
+ }
+
+ button.addEventListener("click",openChat);
+ panel.querySelector("#jarvisFullChatClose")
+      .addEventListener("click",closeChat);
+
+ document.addEventListener("keydown",e=>{
+  if(e.key==="Escape"&&opened)closeChat();
+ });
+})();
+</script>
+
+
+<script>
+// JARVIS_SMOOTH_ENERGY_WAVE_V1
+(()=>{
+ const button=document.getElementById("jarvisFullChatButton");
+ const wave=document.getElementById("jarvisEnergyBurst");
+
+ if(!button||!wave)return;
+
+ button.addEventListener("click",()=>{
+  wave.style.animation="none";
+  void wave.offsetWidth;
+  wave.style.animation="";
+ },true);
+})();
+</script>
+
+
+<script>
+// JARVIS_CHAT_LIVE_BACKGROUND_V1
+(()=>{
+ const canvas=document.querySelector("canvas");
+ const button=document.getElementById("jarvisFullChatButton");
+
+ if(!canvas||!button)return;
+
+ const originalDisplay=canvas.style.display;
+
+ const observer=new MutationObserver(()=>{
+  const active=document.body.classList.contains("jarvis-full-chat");
+
+  if(active){
+   canvas.style.display=originalDisplay||"block";
+  }
+ });
+
+ observer.observe(document.body,{
+  attributes:true,
+  attributeFilter:["class"]
+ });
+})();
+</script>
+
+
+<script>
+// JARVIS_CHAT_BUBBLES_V1
+(()=>{
+ const log=document.getElementById("primeChatLog");
+ if(!log)return;
+
+ function decorate(){
+  for(const node of log.children){
+   if(node.nodeType!==1)continue;
+   if(node.classList.contains("jarvis-message-bubble"))continue;
+
+   const value=(node.textContent||"").trim();
+
+   if(/^YOU:/i.test(value)){
+    node.classList.add(
+     "jarvis-message-bubble",
+     "jarvis-user-bubble"
+    );
+   }else if(/^JARVIS:/i.test(value)){
+    node.classList.add(
+     "jarvis-message-bubble",
+     "jarvis-ai-bubble"
+    );
+   }
+  }
+ }
+
+ decorate();
+
+ new MutationObserver(decorate).observe(log,{
+  childList:true
+ });
+})();
+</script>
+
+
+<script>
+// JARVIS_CHAT_THEME_SYNC_V1
+(()=>{
+ const panel=document.getElementById("jarvisFullChat");
+ if(!panel)return;
+
+ const palettes={
+  arctic:{
+   accent:"65,205,255",
+   secondary:"15,95,175",
+   text:"#d8f6ff",
+   bg:"3,13,29"
+  },
+  space:{
+   accent:"145,110,255",
+   secondary:"67,38,140",
+   text:"#e9e0ff",
+   bg:"10,7,28"
+  },
+  minimal:{
+   accent:"190,205,220",
+   secondary:"65,75,90",
+   text:"#f0f3f6",
+   bg:"13,16,22"
+  },
+  silver:{
+   accent:"255,66,106",
+   secondary:"135,35,115",
+   text:"#ffe0ed",
+   bg:"18,7,22"
+  },
+  emerald:{
+   accent:"50,230,165",
+   secondary:"12,105,78",
+   text:"#d9ffed",
+   bg:"3,23,19"
+  }
+ };
+
+ function sync(){
+  const selector=document.querySelector(
+   'select[id*="theme" i],select[name*="theme" i]'
+  );
+
+  let theme=selector?.value||"arctic";
+
+  if(!palettes[theme])theme="arctic";
+
+  const c=palettes[theme];
+
+  panel.style.setProperty("--chat-accent",c.accent);
+  panel.style.setProperty("--chat-secondary",c.secondary);
+  panel.style.setProperty("--chat-text",c.text);
+  panel.style.setProperty("--chat-bg",c.bg);
+ }
+
+ sync();
+
+ document.addEventListener("change",sync);
+
+ const button=document.getElementById("jarvisFullChatButton");
+ if(button)button.addEventListener("click",sync,true);
+
+ setInterval(sync,1500);
+})();
+</script>
+
+</html>
+
+
+<script>
+/* JARVIS_ORB_LONG_PRESS_THEME_V1 */
+(()=>{
+ const c=document.querySelector('#orb');
+ const t=document.querySelector('#theme');
+ if(!c||!t)return;
+ let timer=null,x=0,y=0,fired=false,pointers=new Set();
+ const cancel=()=>{clearTimeout(timer);timer=null;};
+ c.addEventListener('pointerdown',e=>{
+  if(e.pointerType==='mouse')return;
+  pointers.add(e.pointerId);
+  if(pointers.size!==1){cancel();return;}
+  x=e.clientX;y=e.clientY;fired=false;
+  timer=setTimeout(()=>{
+   if(pointers.size!==1)return;
+   fired=true;
+   const themeSelect=document.querySelector('#theme');
+   window.jarvisPreviousTheme=themeSelect?themeSelect.value:'arctic';
+   window.jarvisStartThemeTransition(()=>{
+    const opts=[...t.options].filter(o=>!o.disabled);
+    const i=opts.findIndex(o=>o.value===t.value);
+    if(opts.length>1){
+     t.value=opts[(i+1)%opts.length].value;
+     t.dispatchEvent(new Event('input',{bubbles:true}));
+     t.dispatchEvent(new Event('change',{bubbles:true}));
+    }
+   });
+  },1000);
+ },{passive:true});
+ c.addEventListener('pointermove',e=>{
+  if(Math.hypot(e.clientX-x,e.clientY-y)>18)cancel();
+ },{passive:true});
+ const end=e=>{pointers.delete(e.pointerId);cancel();};
+ c.addEventListener('pointerup',end,{passive:true});
+ c.addEventListener('pointercancel',end,{passive:true});
+})();
+</script>
+
+<style>
+/* JARVIS_SMOOTH_THEME_TRANSITIONS_V1 */
+:root{color-scheme:dark}
+body,#orb,canvas,button,select,input,
+.panel,.card,[class*="panel"],[class*="card"]{
+ transition:background-color .55s ease,
+ color .55s ease,border-color .55s ease,
+ box-shadow .65s ease,outline-color .55s ease,
+ filter .55s ease !important;
+}
+</style>
+
+<script id="jarvis-device-adapter">
+(function(){
+ function detect(){
+  const w=innerWidth,h=innerHeight;
+  const root=document.documentElement;
+  root.dataset.device=w<700?'phone':
+    w<1100?'tablet':w<1600?'laptop':'desktop';
+  root.dataset.orientation=w>h?'landscape':'portrait';
+  root.dataset.touch=matchMedia('(pointer:coarse)').matches;
+ }
+ function init(){
+  detect();
+  document.querySelectorAll('#primeCards .prime-card')
+   .forEach(card=>{
+    card.addEventListener('click',e=>{
+     if(innerWidth>=700)return;
+     if(e.target.closest('button,input,textarea,select,a'))return;
+     card.classList.toggle('jarvis-expanded');
+    });
+   });
+ }
+ addEventListener('resize',detect,{passive:true});
+ addEventListener('orientationchange',detect);
+ if(document.readyState==='loading')
+  document.addEventListener('DOMContentLoaded',init);
+ else init();
+})();
+</script>
